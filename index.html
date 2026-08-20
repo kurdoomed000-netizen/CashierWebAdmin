@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سیستەمی فرۆشتن — بەڕێوەبەری وێب</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ دیمەنی چوونەژوورەوە ============ -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-box">
+        <div class="login-logo">🏪</div>
+        <h1>سیستەمی فرۆشتن</h1>
+        <p class="login-sub">بەڕێوەبەری وێب</p>
+
+        <div id="loginError" class="alert alert-danger" style="display:none;"></div>
+
+        <label>ناسنامەی فرۆشگا (Slug)</label>
+        <input type="text" id="loginSlug" placeholder="بۆ نموونە: mystore" autocomplete="off">
+
+        <label>ناوی بەکارهێنەر</label>
+        <input type="text" id="loginUsername" autocomplete="username">
+
+        <label>وشەی نهێنی</label>
+        <input type="password" id="loginPassword" autocomplete="current-password">
+
+        <button id="btnLogin" class="btn btn-primary btn-block">چوونەژوورەوە</button>
+
+        <div class="login-links">
+            <a href="#" id="linkShowRegister">فرۆشگای نوێت نییە؟ تۆماری بکە</a>
+        </div>
+
+        <div class="server-config">
+            <label>ناونیشانی سێرڤەر (API)</label>
+            <input type="text" id="apiBaseUrl" placeholder="https://cashierapi.onrender.com">
+            <button id="btnSaveApiUrl" class="btn btn-outline btn-small">پاشەکەوتکردن</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ دیمەنی تۆمارکردنی فرۆشگای نوێ ============ -->
+<div id="registerScreen" class="login-screen" style="display:none;">
+    <div class="login-box">
+        <div class="login-logo">🏪</div>
+        <h1>تۆمارکردنی فرۆشگای نوێ</h1>
+        <p class="login-sub">دروستکردنی فرۆشگا و یەکەم بەکارهێنەری Admin</p>
+
+        <div id="registerError" class="alert alert-danger" style="display:none;"></div>
+
+        <label>ناوی فرۆشگا</label>
+        <input type="text" id="regStoreName" placeholder="بۆ نموونە: فرۆشگای گوڵان" autocomplete="off">
+
+        <label>کۆدی یەکتای فرۆشگا (Slug — بە ئینگلیزی، بەبێ بۆشایی)</label>
+        <input type="text" id="regSlug" placeholder="بۆ نموونە: gulan-store" autocomplete="off">
+
+        <label>ناوی بەکارهێنەری Admin</label>
+        <input type="text" id="regAdminUsername" value="admin" autocomplete="off">
+
+        <label>وشەی نهێنی Admin</label>
+        <input type="password" id="regAdminPassword" autocomplete="new-password">
+
+        <button id="btnRegister" class="btn btn-primary btn-block">دروستکردنی فرۆشگا</button>
+
+        <div class="login-links">
+            <a href="#" id="linkShowLogin">پێشتر فرۆشگام هەیە؟ بچۆرەژوورەوە</a>
+        </div>
+
+        <div class="server-config">
+            <label>ناونیشانی سێرڤەر (API)</label>
+            <input type="text" id="regApiBaseUrl" placeholder="https://cashierapi.onrender.com">
+        </div>
+    </div>
+</div>
+
+<!-- ============ ئاپی سەرەکی ============ -->
+<div id="appShell" class="app-shell" style="display:none;">
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🏪</div>
+            <div id="storeNameLabel" class="store-name"></div>
+        </div>
+
+        <div class="nav-list" id="navList">
+            <a href="#dashboard" class="nav-item" data-page="dashboard">🏠 داشبۆرد</a>
+            <a href="#products" class="nav-item" data-page="products">📦 کاڵاکان</a>
+            <a href="#sales" class="nav-item" data-page="sales">🕓 مێژووی فرۆشتن</a>
+            <a href="#customers" class="nav-item" data-page="customers">🧑‍🤝‍🧑 کڕیاران</a>
+            <a href="#purchases" class="nav-item" data-page="purchases">📥 کڕین</a>
+            <a href="#suppliers" class="nav-item" data-page="suppliers">🚚 دابینکەران</a>
+            <a href="#expenses" class="nav-item" data-page="expenses">💰 خەرجی</a>
+            <a href="#reports" class="nav-item" data-page="reports">📊 ڕاپۆرت</a>
+            <a href="#users" class="nav-item" data-page="users">👤 بەکارهێنەران</a>
+            <a href="#activitylog" class="nav-item" data-page="activitylog">📜 تۆماری چالاکی</a>
+            <a href="#settings" class="nav-item" data-page="settings">⚙️ ڕێکخستنەکان</a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div id="currentUserLabel" class="current-user"></div>
+            <button id="btnLogout" class="btn btn-outline btn-small btn-block">چوونەدەرەوە</button>
+        </div>
+    </nav>
+
+    <main class="content">
+        <!-- باتچ ٣ (دوای MFA) — Trial/GracePeriod/PaymentDue banner،
+        بڕوانە app.js ـی loadSubscriptionBanner(). بەتاڵ دەمێنێتەوە
+        (display:none بە :empty) کاتێک هیچ ئاگاداریەک پێویست نییە. -->
+        <div id="subscriptionBanner"></div>
+
+        <div id="pageContent" class="page-content">
+            <!-- ناوەڕۆکی پەڕەکان لێرە دادەنرێت لەلایەن app.js -->
+        </div>
+    </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/pages-1.js"></script>
+<script src="js/pages-2.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
