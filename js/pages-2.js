@@ -73,7 +73,13 @@ Object.assign(Pages, {
         return `<span class="badge badge-success">دراوە بە تەواوی</span>`;
     },
 
-    showSaleDetails(sale) {
+    // باتچی قەرزی کڕیار — onUpdate: callback ـێکی ئارەزوومەندانە کە دوای
+    // پارەدانی سەرکەوتوو یان دۆزینەوەی SUCCESS ی Qi Card بانگ دەکرێت،
+    // تاوەکو ئەگەر ئەم دیالۆگە لە پەڕەی "قەرزی کڕیاران"ـەوە کراوەتەوە،
+    // دوای پارەدان بگەڕێتەوە بۆ هەمان پەڕە نەک بەرەو "مێژووی فرۆشتن"
+    // (کە بنەڕەتی/کۆنترۆڵی پێشووە).
+    showSaleDetails(sale, onUpdate) {
+        this._saleDetailOnUpdate = onUpdate || (() => Pages.sales(this._salesFilters || {}));
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.id = 'saleDetailModal';
@@ -101,13 +107,56 @@ Object.assign(Pages, {
                     <p>دراوە: <b>${App.fmtMoney(sale.amountPaid)}</b> — ماوە: <b style="color:var(--danger);">${App.fmtMoney(amountDue)}</b></p>
                     <div class="form-row"><label>بڕی پارەدانی نوێ</label><input type="number" step="0.01" id="payAmount_${sale.id}"></div>
                     <button class="btn btn-primary btn-block" onclick="Pages.recordSalePayment(${sale.id})">✅ تۆمارکردنی پارەدان</button>
+                    <button class="btn btn-outline btn-block" style="margin-top:6px;" onclick="Pages.createQiCardLink(${sale.id})">🔗 دروستکردنی لینکی پارەدانی Qi Card</button>
+                    <div id="qicardResult_${sale.id}"></div>
                 ` : ''}
                 <div style="display:flex;gap:8px;margin-top:10px;">
                     <button class="btn btn-outline" style="flex:1;" onclick='Pages.printInvoice(${JSON.stringify(sale)})'>🖨️ چاپکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">داخستن</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="Pages.closeSaleDetailModal()">داخستن</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
+
+        // Qi Card — خۆکارانە دۆخی پارەدان هەر ٥ چرکە دەپشکنرێت هەتا
+        // دیالۆگەکە کراوەیە، تاوەکو پێویست نەبێت بە دەستی داخران و
+        // دووبارە کرانەوە بۆ بینینی دۆخی نوێ دوای پارەدانی کڕیار.
+        this.stopQiCardPoll();
+        if (notPaid) {
+            this._qicardPollTimer = setInterval(() => Pages.pollQiCardStatus(sale.id), 5000);
+        }
+    },
+
+    stopQiCardPoll() {
+        if (this._qicardPollTimer) {
+            clearInterval(this._qicardPollTimer);
+            this._qicardPollTimer = null;
+        }
+    },
+
+    closeSaleDetailModal() {
+        this.stopQiCardPoll();
+        document.getElementById('saleDetailModal')?.remove();
+    },
+
+    // پشکنینی دۆخی پارەدانی Qi Card بەبێ دووبارە کردنەوەی دیالۆگ.
+    // بانگکردنی GetQiCardStatus لای سێرڤەر خۆی هەوڵی auto-apply
+    // دەدات ئەگەر تا ئێستا وێبهووکی Qi Card نەگەیشتبێت (بڕوانە
+    // PaymentsController.cs). بەم شێوەیە پارەدان دەردەکەوێت تەنانەت
+    // ئەگەر وێبهووکەکە دواکەوتبێت.
+    async pollQiCardStatus(saleId) {
+        if (!document.getElementById('saleDetailModal')) { this.stopQiCardPoll(); return; }
+        try {
+            const status = await Api.getQiCardStatus(saleId);
+            if (status && status.status === 'SUCCESS') {
+                this.stopQiCardPoll();
+                document.getElementById('saleDetailModal')?.remove();
+                alert('✅ کڕیار لە ڕێگەی Qi Card ـەوە پارەی دا. دۆخی وەصڵەکە نوێکرایەوە.');
+                (Pages._saleDetailOnUpdate || (() => Pages.sales(Pages._salesFilters || {})))();
+            }
+        } catch {
+            // هەڵەی کاتی/ئینتەرنێت — پشکنینی دواتر بەردەوام دەبێت،
+            // پێویست بە ئاگادارکردنەوەی ئەدمین لێرە نییە.
+        }
     },
 
     // Part 13 — INVOICES: تۆمارکردنی پارەدانی زیاتر — هەمان endpoint ی
@@ -123,10 +172,46 @@ Object.assign(Pages, {
 
         try {
             await Api.recordSalePayment(saleId, amount);
+            Pages.stopQiCardPoll();
             document.getElementById('saleDetailModal')?.remove();
-            Pages.sales(this._salesFilters || {});
+            (Pages._saleDetailOnUpdate || (() => Pages.sales(Pages._salesFilters || {})))();
         } catch (err) {
             alert('نەتوانرا پارەدانەکە تۆمار بکرێت:\n' + err.message);
+        }
+    },
+
+    // قۆناغی دەروازەی پارەدان — Qi Card. لینکێک/QR دروست دەکات کە کڕیار
+    // لە مۆبایلی خۆیەوە دەیکاتەوە و بڕی ماوەی وەصڵەکە دەدات — دوای
+    // پارەدان، Qi Card خۆکارانە وێبهووک دەنێرێت بۆ CashierApi و
+    // Sale.PaymentState خۆکارانە نوێ دەکرێتەوە (بڕوانە
+    // CashierApi/Controllers/PaymentsController.cs). ئەم دوگمەیە لینکەکە
+    // پیشان دەدات؛ دۆخی پارەدان خۆکارانە دەپشکنرێت (بڕوانە
+    // pollQiCardStatus/stopQiCardPoll) هەتا دیالۆگەکە کراوەیە — پێویست
+    // بە داخستن/کردنەوەی دەستی نییە.
+    async createQiCardLink(saleId) {
+        const resultBox = document.getElementById('qicardResult_' + saleId);
+        if (resultBox) resultBox.innerHTML = `<p class="text-muted">چاوەڕوان بە...</p>`;
+
+        try {
+            const result = await Api.createQiCardPayment(saleId);
+            if (!resultBox) return;
+
+            if (!result?.formUrl) {
+                resultBox.innerHTML = `<p style="color:var(--danger);">وەڵامی نادروست وەرگیرا لە Qi Card.</p>`;
+                return;
+            }
+
+            resultBox.innerHTML = `
+                <div class="form-row" style="margin-top:8px;">
+                    <label>لینکی پارەدان (بڕی ${App.fmtMoney(result.amount)})</label>
+                    <input type="text" readonly value="${App.escapeHtml(result.formUrl)}" onclick="this.select()">
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a class="btn btn-primary" style="flex:1;text-align:center;" href="${App.escapeHtml(result.formUrl)}" target="_blank" rel="noopener">کردنەوەی لینک</a>
+                    <button class="btn btn-outline" style="flex:1;" onclick="navigator.clipboard.writeText('${App.escapeHtml(result.formUrl)}').then(()=>alert('کۆپی کرا.'))">کۆپیکردن</button>
+                </div>`;
+        } catch (err) {
+            if (resultBox) resultBox.innerHTML = `<p style="color:var(--danger);">نەتوانرا لینکی Qi Card دروست بکرێت:<br>${App.escapeHtml(err.message)}</p>`;
         }
     },
 
@@ -717,6 +802,117 @@ Object.assign(Pages, {
             overlay.innerHTML = `<div class="modal-box">${App.errorHtml(err)}
                 <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
         }
+    },
+
+    // ============ قەرزی کڕیاران (باتچی قەرزی کڕیار — API ـەکە پێشتر
+    // لە سیشنێکی پێشووتردا لای سێرڤەرەوە تەواو بوو، Sale.CustomerId +
+    // Sale.PaymentState/AmountPaid خۆیان سەرچاوەی ڕاستی قەرزن، هیچ
+    // ستوونی جیاوازی قەرز پاشەکەوت نابێت — بۆیە قەرز خۆکارانە زیاد
+    // دەبێت کاتێک فرۆشتنێکی Partial/Unpaid بۆ کڕیارێک تۆمار دەکرێت لە
+    // هەر ئەپێکەوە (Desktop/Mobile). ئەم پەڕەیە یەکەم ڕوکاری WebAdmin ـە
+    // بۆی. ) ============
+    async customerDebts(search) {
+        App.setContent(App.loadingHtml());
+        try {
+            const list = await Api.getCustomersWithBalance(true, search);
+
+            let html = `<h2 class="page-title">📒 قەرزی کڕیاران</h2>
+                <div class="filter-bar">
+                    <div class="form-row" style="flex:1;min-width:200px;">
+                        <input type="text" id="debtSearch" placeholder="گەڕان بە ناو یان ئایدی کڕیار..." value="${App.escapeHtml(search || '')}">
+                    </div>
+                    <button class="btn btn-primary" onclick="Pages.searchCustomerDebts()">گەڕان</button>
+                </div>`;
+
+            if (list.length === 0) {
+                html += App.emptyHtml('هیچ کڕیارێکی قەرزدار نییە 🎉');
+            } else {
+                const totalDebt = list.reduce((s, c) => s + c.totalDebt, 0);
+                html += `<div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-label">کڕیاری قەرزدار</div><div class="kpi-value">${list.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">کۆی گشتی قەرز</div><div class="kpi-value">${App.fmtMoney(totalDebt)}</div></div>
+                </div>`;
+
+                html += `<div class="row-list">`;
+                for (const c of list) {
+                    html += `<div class="row-item">
+                        <div class="row-icon">📒</div>
+                        <div class="row-main">
+                            <div class="row-title">${App.escapeHtml(c.name)} <span class="text-muted">#${c.customerId}</span></div>
+                            <div class="row-sub">${App.escapeHtml(c.phone || 'بێ ژمارە')} · ${c.unpaidSalesCount} وەصڵی نەدراو</div>
+                        </div>
+                        <div class="row-total" style="color:var(--danger);">${App.fmtMoney(c.totalDebt)}</div>
+                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick="Pages.showCustomerDebtDetail(${c.customerId}, '${App.escapeHtml(c.name)}')">وردەکاری</button></div>
+                    </div>`;
+                }
+                html += `</div>`;
+            }
+
+            App.setContent(html);
+            document.getElementById('debtSearch')?.addEventListener('keydown', e => {
+                if (e.key === 'Enter') this.searchCustomerDebts();
+            });
+        } catch (err) {
+            App.setContent(App.errorHtml(err));
+        }
+    },
+
+    searchCustomerDebts() {
+        this.customerDebts(document.getElementById('debtSearch').value.trim());
+    },
+
+    async showCustomerDebtDetail(id, name) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'debtDetailModal';
+        overlay.innerHTML = `<div class="modal-box"><h3>وەصڵە نەدراوەکانی: ${App.escapeHtml(name)}</h3>${App.loadingHtml()}</div>`;
+        document.body.appendChild(overlay);
+
+        try {
+            const sales = await Api.getCustomerUnpaidSales(id);
+            const totalDue = sales.reduce((s, x) => s + Math.max((x.total || 0) - (x.amountPaid || 0), 0), 0);
+
+            let html = `<div class="modal-box">
+                <h3>وەصڵە نەدراوەکانی: ${App.escapeHtml(name)}</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-label">وەصڵ</div><div class="kpi-value">${sales.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">کۆی ماوە</div><div class="kpi-value">${App.fmtMoney(totalDue)}</div></div>
+                </div>`;
+
+            if (sales.length === 0) {
+                html += App.emptyHtml('هیچ وەصڵێکی نەدراو نەماوە 🎉');
+            } else {
+                html += `<div class="row-list">` + sales.map(s => `
+                    <div class="row-item">
+                        <div class="row-icon">🧾</div>
+                        <div class="row-main"><div class="row-title">${App.escapeHtml(s.invoiceNumber || ('#' + s.id))}</div><div class="row-sub">${App.fmtDate(s.date)}</div></div>
+                        <div class="row-col">${Pages.paymentStateBadge(s.paymentState)}</div>
+                        <div class="row-total" style="color:var(--danger);">${App.fmtMoney(Math.max((s.total || 0) - (s.amountPaid || 0), 0))}</div>
+                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick='Pages.openDebtSaleDetail(${JSON.stringify(s)}, ${id}, ${JSON.stringify(name)})'>پارەدان</button></div>
+                    </div>`).join('') + `</div>`;
+            }
+
+            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+            overlay.innerHTML = html;
+        } catch (err) {
+            overlay.innerHTML = `<div class="modal-box">${App.errorHtml(err)}
+                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+        }
+    },
+
+    // پارەدانی وەصڵێک لەناو دیالۆگی "قەرزی کڕیاران" — دیالۆگی وردەکاری
+    // کڕیارەکە داخرا دەکرێت، دیالۆگی ئاسایی showSaleDetails دەکرێتەوە،
+    // و دوای پارەدان دووبارە دەگەڕێتەوە بۆ دیالۆگی وردەکاری کڕیارەکە
+    // (نەک بەرەو پەڕەی "مێژووی فرۆشتن").
+    openDebtSaleDetail(sale, customerId, customerName) {
+        document.getElementById('debtDetailModal')?.remove();
+        Pages.showSaleDetails(sale, () => {
+            Pages.showCustomerDebtDetail(customerId, customerName);
+            // دیوی لیستی سەرەکیش نوێ بکرێتەوە ئەگەر ئێستا لەسەری بووین.
+            if ((location.hash || '').replace('#', '') === 'customerdebts') {
+                Pages.customerDebts(document.getElementById('debtSearch')?.value?.trim());
+            }
+        });
     },
 
     // ============ دابینکەران (Part 13 — یەکەم ڕوکاری وێبی ئەم

@@ -95,8 +95,11 @@ const Pages = {
                 html += `<div class="row-list">`;
                 for (const p of products) {
                     const low = p.quantity <= 5;
+                    const thumb = p.imageUrl
+                        ? `<img src="${App.escapeHtml(p.imageUrl)}" class="row-icon" style="object-fit:cover;border-radius:6px;" onerror="this.style.display='none'">`
+                        : `<div class="row-icon">📦</div>`;
                     html += `<div class="row-item">
-                        <div class="row-icon">📦</div>
+                        ${thumb}
                         <div class="row-main">
                             <div class="row-title">${App.escapeHtml(p.name)}</div>
                             <div class="row-sub">${App.escapeHtml(p.category || 'بێ پۆل')} ${p.barcodeSingle ? '· ' + App.escapeHtml(p.barcodeSingle) : ''}</div>
@@ -126,13 +129,23 @@ const Pages = {
     },
 
     showProductForm(product) {
-        const p = product || { id: 0, name: '', category: '', price: 0, costPrice: 0, quantity: 0, barcodeSingle: '', barcodeSet: '', setQuantity: 1, barcodeRangeStart: '', barcodeRangeEnd: '' };
+        const p = product || { id: 0, name: '', category: '', price: 0, costPrice: 0, quantity: 0, barcodeSingle: '', barcodeSet: '', setQuantity: 1, barcodeRangeStart: '', barcodeRangeEnd: '', imageUrl: '' };
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-box">
                 <h3>${p.id ? 'دەستکاریکردنی کاڵا' : 'زیادکردنی کاڵا'}</h3>
                 <div id="productFormError" class="alert alert-danger" style="display:none;"></div>
+                <div class="form-row">
+                    <label>وێنە</label>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        ${p.imageUrl ? `<img id="pf_imagePreview" src="${App.escapeHtml(p.imageUrl)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;">` : `<div id="pf_imagePreview" style="width:64px;height:64px;border-radius:6px;background:#eee;display:flex;align-items:center;justify-content:center;">📦</div>`}
+                        <div style="flex:1;">
+                            <input type="file" id="pf_image" accept="image/jpeg,image/png,image/webp">
+                            ${p.id && p.imageUrl ? `<button type="button" class="btn btn-outline btn-small" style="margin-top:6px;" onclick="Pages.deleteProductImage(${p.id})">سڕینەوەی وێنە</button>` : ''}
+                        </div>
+                    </div>
+                </div>
                 <div class="form-row"><label>ناو</label><input id="pf_name" value="${App.escapeHtml(p.name)}"></div>
                 <div class="form-row"><label>پۆل</label><input id="pf_category" value="${App.escapeHtml(p.category)}"></div>
                 <div class="form-row"><label>نرخی فرۆشتن</label><input id="pf_price" type="number" step="0.01" value="${p.price}"></div>
@@ -172,16 +185,46 @@ const Pages = {
         }
 
         try {
+            let savedId = id;
             if (id) {
                 await Api.updateProduct(id, product);
             } else {
-                await Api.createProduct(product);
+                const created = await Api.createProduct(product);
+                savedId = created?.id;
             }
+
+            // فازی وێنەی کاڵا — ئەگەر فایلێک هەڵبژێردرا، دوای
+            // پاشەکەوتکردنی زانیاری بنەڕەتی کاڵاکە (کە پێویستە Id ی
+            // ڕاستەقینەی هەبێت پێش بارکردنی وێنە)، ئێستا وێنەکە بار دەکرێت.
+            const fileInput = document.getElementById('pf_image');
+            const file = fileInput?.files?.[0];
+            if (file && savedId) {
+                try {
+                    await Api.uploadProductImage(savedId, file);
+                } catch (imgErr) {
+                    // زانیاری بنەڕەتی سەرکەوتوو بوو — تەنها وێنەکە شکستی
+                    // هێنا، بۆیە فۆرمەکە دادەخرێت بەڵام ئاگاداری دەکەینەوە
+                    // نەک هەموو کارەکە پووچەڵ بکەینەوە.
+                    alert('زانیارییەکانی کاڵا پاشەکەوتکران، بەڵام نەتوانرا وێنەکە بار بکرێت:\n' + imgErr.message);
+                }
+            }
+
             document.querySelector('.modal-overlay')?.remove();
             this.products();
         } catch (err) {
             errBox.textContent = err.message;
             errBox.style.display = 'block';
+        }
+    },
+
+    async deleteProductImage(id) {
+        if (!confirm('دڵنیایت لە سڕینەوەی وێنەکە؟')) return;
+        try {
+            await Api.deleteProductImage(id);
+            document.querySelector('.modal-overlay')?.remove();
+            this.products();
+        } catch (err) {
+            alert(err.message);
         }
     },
 

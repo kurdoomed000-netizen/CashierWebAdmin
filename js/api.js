@@ -109,6 +109,45 @@ const Api = {
     updateProduct(id, product) { return this.put('/api/Products/' + id, product); },
     deleteProduct(id) { return this.del('/api/Products/' + id); },
 
+    // فازی وێنەی کاڵا — بڕوانە CashierApi/Controllers/ProductsController.cs
+    // (UploadImage/DeleteImage). uploadFile() جیاوازە لە request() ئاسایی
+    // چونکە multipart/form-data دەنێرێت، نەک JSON.
+    uploadProductImage(id, file) { return this.uploadFile('/api/Products/' + id + '/image', file); },
+    deleteProductImage(id) { return this.del('/api/Products/' + id + '/image'); },
+
+    async uploadFile(path, file) {
+        const headers = {};
+        const token = this.getToken();
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const form = new FormData();
+        form.append('file', file);
+
+        let resp;
+        try {
+            resp = await fetch(this.getBaseUrl() + path, { method: 'POST', headers, body: form });
+        } catch (err) {
+            throw new ApiError(0, 'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. تکایە ئینتەرنێت/ناونیشانی سێرڤەر بپشکنە.');
+        }
+
+        if (resp.status === 401) {
+            this.clearSession();
+            throw new ApiError(401, 'کاتی چوونەژوورەوەت بەسەرچووە، تکایە دووبارە بچۆرەژوورەوە.');
+        }
+        if (resp.status === 403) throw new ApiError(403, 'دەسەڵاتت نییە بۆ ئەم کردارە.');
+
+        if (!resp.ok) {
+            let message = 'هەڵەیەک ڕوویدا (' + resp.status + ')';
+            try {
+                const data = await resp.json();
+                message = data.message || data.error || message;
+            } catch { /* وەڵامەکە JSON نەبوو */ }
+            throw new ApiError(resp.status, message);
+        }
+
+        return resp.json().catch(() => null);
+    },
+
     // -------------------- Sales --------------------
     getSales(params = {}) {
         const q = new URLSearchParams();
@@ -124,6 +163,11 @@ const Api = {
         return this.patch('/api/Sales/' + id + '/payment', { additionalAmount, notes });
     },
 
+    // قۆناغی دەروازەی پارەدان — Qi Card. بڕوانە
+    // CashierApi/Controllers/PaymentsController.cs.
+    createQiCardPayment(saleId) { return this.post('/api/Payments/qicard/' + saleId + '/create'); },
+    getQiCardStatus(saleId) { return this.get('/api/Payments/qicard/' + saleId + '/status'); },
+
     // -------------------- Customers (Part 13 — پێشتر هیچ ڕوکارێکی
     // بۆ نەبوو، تەنها API ـەکەی هەبوو) --------------------
     getCustomers(search) {
@@ -133,6 +177,18 @@ const Api = {
     updateCustomer(id, customer) { return this.put('/api/Customers/' + id, customer); },
     deleteCustomer(id) { return this.del('/api/Customers/' + id); },
     getCustomerSales(id) { return this.get('/api/Customers/' + id + '/sales'); },
+
+    // باتچی قەرزی کڕیار — بڕوانە CashierApi/Controllers/CustomersController.cs.
+    // with-balance: لیستی هەموو کڕیاران (یان تەنها قەرزدارەکان) + بڕی
+    // قەرزی هەریەکەیان. گەڕان بە ناو/ژمارە یان بە ئایدی کڕیار.
+    getCustomersWithBalance(onlyWithDebt, search) {
+        const q = new URLSearchParams();
+        if (onlyWithDebt) q.set('onlyWithDebt', 'true');
+        if (search) q.set('search', search);
+        return this.get('/api/Customers/with-balance' + (q.toString() ? '?' + q.toString() : ''));
+    },
+    getCustomerBalance(id) { return this.get('/api/Customers/' + id + '/balance'); },
+    getCustomerUnpaidSales(id) { return this.get('/api/Customers/' + id + '/unpaid-sales'); },
 
     // -------------------- Expenses --------------------
     getExpenses() { return this.get('/api/Expenses'); },

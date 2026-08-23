@@ -121,6 +121,11 @@ const App = {
             // تەنها [Authorize] ی هەیە بۆ GetAll/GetOne (هەموو ڕۆڵێک
             // دەتوانێت ببینێت)، بۆیە ئێرەش هەمان چوار ڕۆڵی products.
             customers: ['Admin', 'Cashier', 'DataEntry', 'Accountant'],
+            // باتچی قەرزی کڕیار — endpoint ـەکانی with-balance/unpaid-sales
+            // لای سێرڤەرەوە تەنها [Authorize(Roles="Admin,Cashier,Accountant")]ن
+            // (DataEntry نیە)، بۆیە ئێرەش هەمان سێ ڕۆڵە تاوەکو DataEntry
+            // پەڕەیەکی 403 نەبینێت.
+            customerdebts: ['Admin', 'Cashier', 'Accountant'],
             purchases: ['Admin', 'DataEntry', 'Accountant'],
             suppliers: ['Admin', 'Cashier', 'DataEntry', 'Accountant'],
             expenses: ['Admin', 'Accountant'],
@@ -215,6 +220,7 @@ const App = {
             products: Pages.products,
             sales: Pages.sales,
             customers: Pages.customers,
+            customerdebts: Pages.customerDebts,
             purchases: Pages.purchases,
             suppliers: Pages.suppliers,
             expenses: Pages.expenses,
