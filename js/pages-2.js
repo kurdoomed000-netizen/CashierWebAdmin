@@ -11,22 +11,22 @@ Object.assign(Pages, {
             const result = await Api.getSales(f);
             const salesArr = Array.isArray(result) ? result : (result?.data || []);
 
-            let html = `<h2 class="page-title">🕓 مێژووی فرۆشتن</h2>
+            let html = `<h2 class="page-title">🕓 ${I18n.t('sales.title')}</h2>
                 <div class="filter-bar">
-                    <div class="form-row"><label>لە بەرواری</label><input type="date" id="sFrom" value="${f.from || ''}"></div>
-                    <div class="form-row"><label>بۆ بەرواری</label><input type="date" id="sTo" value="${f.to || ''}"></div>
-                    <div class="form-row"><label>گەڕان (فرۆشیار/ژمارە)</label><input type="text" id="sSearch" value="${App.escapeHtml(f.search || '')}"></div>
-                    <button class="btn btn-primary" onclick="Pages.applySalesFilter()">فلتەرکردن</button>
-                    <button class="btn btn-outline" onclick="Pages.sales({})">سڕینەوەی فلتەر</button>
+                    <div class="form-row"><label>${I18n.t('common.fromDate')}</label><input type="date" id="sFrom" value="${f.from || ''}"></div>
+                    <div class="form-row"><label>${I18n.t('common.toDate')}</label><input type="date" id="sTo" value="${f.to || ''}"></div>
+                    <div class="form-row"><label>${I18n.t('sales.searchLabel')}</label><input type="text" id="sSearch" value="${App.escapeHtml(f.search || '')}"></div>
+                    <button class="btn btn-primary" onclick="Pages.applySalesFilter()">${I18n.t('common.filter')}</button>
+                    <button class="btn btn-outline" onclick="Pages.sales({})">${I18n.t('common.clearFilter')}</button>
                 </div>`;
 
             if (salesArr.length === 0) {
-                html += App.emptyHtml('هیچ فرۆشتنێک نەدۆزرایەوە');
+                html += App.emptyHtml(I18n.t('sales.none'));
             } else {
                 const totalRevenue = salesArr.reduce((sum, s) => sum + s.total, 0);
                 html += `<div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-label">وەصڵ</div><div class="kpi-value">${salesArr.length}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">کۆی گشتی</div><div class="kpi-value">${App.fmtMoney(totalRevenue)}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.receipt')}</div><div class="kpi-value">${salesArr.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.total')}</div><div class="kpi-value">${App.fmtMoney(totalRevenue)}</div></div>
                 </div>`;
 
                 html += `<div class="row-list">`;
@@ -40,11 +40,11 @@ Object.assign(Pages, {
                             <div class="row-title">${App.escapeHtml(s.invoiceNumber || ('#' + s.id))}</div>
                             <div class="row-sub">${App.fmtDate(s.date)} · ${App.escapeHtml(s.soldBy)}</div>
                         </div>
-                        <div class="row-col"><div class="n">${(s.items || []).length}</div><div class="l">کاڵا</div></div>
-                        <div class="row-col"><div class="n">${App.fmtMoney(s.discount)}</div><div class="l">داشکاندن</div></div>
+                        <div class="row-col"><div class="n">${(s.items || []).length}</div><div class="l">${I18n.t('common.items')}</div></div>
+                        <div class="row-col"><div class="n">${App.fmtMoney(s.discount)}</div><div class="l">${I18n.t('common.discount')}</div></div>
                         <div class="row-total">${App.fmtMoney(s.total)}</div>
                         <div class="row-col">${Pages.paymentStateBadge(s.paymentState)}</div>
-                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick='Pages.showSaleDetails(${JSON.stringify(s)})'>وردەکاری</button></div>
+                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick='Pages.showSaleDetails(${JSON.stringify(s)})'>${I18n.t('common.details')}</button></div>
                     </div>`;
                 }
                 html += `</div>`;
@@ -68,9 +68,9 @@ Object.assign(Pages, {
     // فرۆشتن و لە دیالۆگی وردەکاری. "Paid" وەک پێشتر هیچ بادجێکی
     // زیادەی نیشان نادات (سروشتی) — تەنها Partial/Unpaid دەردەکەون.
     paymentStateBadge(state) {
-        if (state === 'Partial') return `<span class="badge badge-warning">بەشێک دراوە</span>`;
-        if (state === 'Unpaid') return `<span class="badge badge-danger">هیچ نەدراوە</span>`;
-        return `<span class="badge badge-success">دراوە بە تەواوی</span>`;
+        if (state === 'Partial') return `<span class="badge badge-warning">${I18n.t('sales.partiallyPaid')}</span>`;
+        if (state === 'Unpaid') return `<span class="badge badge-danger">${I18n.t('sales.unpaid')}</span>`;
+        return `<span class="badge badge-success">${I18n.t('sales.fullyPaid')}</span>`;
     },
 
     // باتچی قەرزی کڕیار — onUpdate: callback ـێکی ئارەزوومەندانە کە دوای
@@ -97,22 +97,22 @@ Object.assign(Pages, {
 
         overlay.innerHTML = `
             <div class="modal-box">
-                <h3>${App.escapeHtml(sale.invoiceNumber || ('وەصڵ #' + sale.id))}</h3>
-                <p class="text-muted">${App.fmtDate(sale.date)} — فرۆشیار: ${App.escapeHtml(sale.soldBy)}</p>
+                <h3>${App.escapeHtml(sale.invoiceNumber || (I18n.t('common.receipt') + ' #' + sale.id))}</h3>
+                <p class="text-muted">${App.fmtDate(sale.date)} — ${I18n.t('common.soldBy')}: ${App.escapeHtml(sale.soldBy)}</p>
                 <p>${Pages.paymentStateBadge(sale.paymentState)}</p>
                 <div class="mini-row-list">${itemsHtml}</div>
-                <p style="margin-top:14px;">داشکاندن: <b>${App.fmtMoney(sale.discount)}</b></p>
-                <p style="font-size:18px;color:var(--primary-dark);">کۆی گشتی: <b>${App.fmtMoney(sale.total)}</b></p>
+                <p style="margin-top:14px;">${I18n.t('common.discount')}: <b>${App.fmtMoney(sale.discount)}</b></p>
+                <p style="font-size:18px;color:var(--primary-dark);">${I18n.t('common.total')}: <b>${App.fmtMoney(sale.total)}</b></p>
                 ${notPaid ? `
-                    <p>دراوە: <b>${App.fmtMoney(sale.amountPaid)}</b> — ماوە: <b style="color:var(--danger);">${App.fmtMoney(amountDue)}</b></p>
-                    <div class="form-row"><label>بڕی پارەدانی نوێ</label><input type="number" step="0.01" id="payAmount_${sale.id}"></div>
-                    <button class="btn btn-primary btn-block" onclick="Pages.recordSalePayment(${sale.id})">✅ تۆمارکردنی پارەدان</button>
-                    <button class="btn btn-outline btn-block" style="margin-top:6px;" onclick="Pages.createQiCardLink(${sale.id})">🔗 دروستکردنی لینکی پارەدانی Qi Card</button>
+                    <p>${I18n.t('sales.paidLabel')}: <b>${App.fmtMoney(sale.amountPaid)}</b> — ${I18n.t('sales.dueLabel')}: <b style="color:var(--danger);">${App.fmtMoney(amountDue)}</b></p>
+                    <div class="form-row"><label>${I18n.t('sales.newPaymentAmount')}</label><input type="number" step="0.01" id="payAmount_${sale.id}"></div>
+                    <button class="btn btn-primary btn-block" onclick="Pages.recordSalePayment(${sale.id})">${I18n.t('sales.recordPayment')}</button>
+                    <button class="btn btn-outline btn-block" style="margin-top:6px;" onclick="Pages.createQiCardLink(${sale.id})">${I18n.t('sales.createQiCardLink')}</button>
                     <div id="qicardResult_${sale.id}"></div>
                 ` : ''}
                 <div style="display:flex;gap:8px;margin-top:10px;">
-                    <button class="btn btn-outline" style="flex:1;" onclick='Pages.printInvoice(${JSON.stringify(sale)})'>🖨️ چاپکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="Pages.closeSaleDetailModal()">داخستن</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick='Pages.printInvoice(${JSON.stringify(sale)})'>🖨️ ${I18n.t('common.print')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="Pages.closeSaleDetailModal()">${I18n.t('common.close')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -150,7 +150,7 @@ Object.assign(Pages, {
             if (status && status.status === 'SUCCESS') {
                 this.stopQiCardPoll();
                 document.getElementById('saleDetailModal')?.remove();
-                alert('✅ کڕیار لە ڕێگەی Qi Card ـەوە پارەی دا. دۆخی وەصڵەکە نوێکرایەوە.');
+                alert(I18n.t('sales.qiCardPaid'));
                 (Pages._saleDetailOnUpdate || (() => Pages.sales(Pages._salesFilters || {})))();
             }
         } catch {
@@ -166,7 +166,7 @@ Object.assign(Pages, {
         const input = document.getElementById('payAmount_' + saleId);
         const amount = parseFloat(input?.value || '0');
         if (!amount || amount <= 0) {
-            alert('تکایە بڕێکی دروست (لە سفر گەورەتر) بنووسە.');
+            alert(I18n.t('sales.invalidAmount'));
             return;
         }
 
@@ -176,7 +176,7 @@ Object.assign(Pages, {
             document.getElementById('saleDetailModal')?.remove();
             (Pages._saleDetailOnUpdate || (() => Pages.sales(Pages._salesFilters || {})))();
         } catch (err) {
-            alert('نەتوانرا پارەدانەکە تۆمار بکرێت:\n' + err.message);
+            alert(I18n.t('sales.paymentFailedPrefix') + '\n' + err.message);
         }
     },
 
@@ -190,28 +190,28 @@ Object.assign(Pages, {
     // بە داخستن/کردنەوەی دەستی نییە.
     async createQiCardLink(saleId) {
         const resultBox = document.getElementById('qicardResult_' + saleId);
-        if (resultBox) resultBox.innerHTML = `<p class="text-muted">چاوەڕوان بە...</p>`;
+        if (resultBox) resultBox.innerHTML = `<p class="text-muted">${I18n.t('common.waitingDots')}</p>`;
 
         try {
             const result = await Api.createQiCardPayment(saleId);
             if (!resultBox) return;
 
             if (!result?.formUrl) {
-                resultBox.innerHTML = `<p style="color:var(--danger);">وەڵامی نادروست وەرگیرا لە Qi Card.</p>`;
+                resultBox.innerHTML = `<p style="color:var(--danger);">${I18n.t('sales.qiCardBadResponse')}</p>`;
                 return;
             }
 
             resultBox.innerHTML = `
                 <div class="form-row" style="margin-top:8px;">
-                    <label>لینکی پارەدان (بڕی ${App.fmtMoney(result.amount)})</label>
+                    <label>${I18n.t('sales.paymentLinkLabel', { amount: App.fmtMoney(result.amount) })}</label>
                     <input type="text" readonly value="${App.escapeHtml(result.formUrl)}" onclick="this.select()">
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <a class="btn btn-primary" style="flex:1;text-align:center;" href="${App.escapeHtml(result.formUrl)}" target="_blank" rel="noopener">کردنەوەی لینک</a>
-                    <button class="btn btn-outline" style="flex:1;" onclick="navigator.clipboard.writeText('${App.escapeHtml(result.formUrl)}').then(()=>alert('کۆپی کرا.'))">کۆپیکردن</button>
+                    <a class="btn btn-primary" style="flex:1;text-align:center;" href="${App.escapeHtml(result.formUrl)}" target="_blank" rel="noopener">${I18n.t('sales.openLink')}</a>
+                    <button class="btn btn-outline" style="flex:1;" onclick="navigator.clipboard.writeText('${App.escapeHtml(result.formUrl)}').then(()=>alert('${I18n.t('common.copied')}'))">${I18n.t('common.copy')}</button>
                 </div>`;
         } catch (err) {
-            if (resultBox) resultBox.innerHTML = `<p style="color:var(--danger);">نەتوانرا لینکی Qi Card دروست بکرێت:<br>${App.escapeHtml(err.message)}</p>`;
+            if (resultBox) resultBox.innerHTML = `<p style="color:var(--danger);">${I18n.t('sales.qiCardCreateFailed')}<br>${App.escapeHtml(err.message)}</p>`;
         }
     },
 
@@ -229,17 +229,17 @@ Object.assign(Pages, {
             </tr>`).join('');
 
         const amountDue = Math.max((sale.total || 0) - (sale.amountPaid || 0), 0);
-        const paymentStateText = sale.paymentState === 'Partial' ? 'بەشێک دراوە'
-            : sale.paymentState === 'Unpaid' ? 'هیچ نەدراوە' : 'دراوە بە تەواوی';
+        const paymentStateText = sale.paymentState === 'Partial' ? I18n.t('sales.partiallyPaid')
+            : sale.paymentState === 'Unpaid' ? I18n.t('sales.unpaid') : I18n.t('sales.fullyPaid');
 
         const win = window.open('', '_blank');
-        if (!win) { alert('وێبگەڕەکەت ڕێگری کرد لە کردنەوەی پەنجەرەی چاپکردن.'); return; }
+        if (!win) { alert(I18n.t('sales.popupBlocked')); return; }
 
         win.document.write(`
-            <html dir="rtl" lang="ku">
+            <html dir="${I18n.langMeta[I18n.current].dir}" lang="${I18n.current}">
             <head>
                 <meta charset="utf-8">
-                <title>${App.escapeHtml(sale.invoiceNumber || ('وەصڵ #' + sale.id))}</title>
+                <title>${App.escapeHtml(sale.invoiceNumber || (I18n.t('common.receipt') + ' #' + sale.id))}</title>
                 <style>
                     body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 30px; color: #17332E; }
                     h1 { font-size: 20px; margin-bottom: 4px; }
@@ -252,17 +252,17 @@ Object.assign(Pages, {
                 </style>
             </head>
             <body onload="window.print()">
-                <h1>${App.escapeHtml(sale.invoiceNumber || ('وەصڵ #' + sale.id))}</h1>
-                <p class="muted">${App.fmtDate(sale.date)} — فرۆشیار: ${App.escapeHtml(sale.soldBy || '')}</p>
+                <h1>${App.escapeHtml(sale.invoiceNumber || (I18n.t('common.receipt') + ' #' + sale.id))}</h1>
+                <p class="muted">${App.fmtDate(sale.date)} — ${I18n.t('common.soldBy')}: ${App.escapeHtml(sale.soldBy || '')}</p>
                 <table>
-                    <thead><tr><th>کاڵا</th><th>بڕ</th><th>نرخ</th><th>کۆ</th></tr></thead>
+                    <thead><tr><th>${I18n.t('sales.colProduct')}</th><th>${I18n.t('common.qty')}</th><th>${I18n.t('sales.colPrice')}</th><th>${I18n.t('common.total')}</th></tr></thead>
                     <tbody>${itemsRows}</tbody>
                 </table>
                 <div class="totals">
-                    <p>داشکاندن: ${App.fmtMoney(sale.discount)}</p>
-                    <p class="grand">کۆی گشتی: ${App.fmtMoney(sale.total)}</p>
-                    <p>دۆخی پارەدان: ${paymentStateText}</p>
-                    ${sale.paymentState !== 'Paid' ? `<p>دراوە: ${App.fmtMoney(sale.amountPaid)} — ماوە: ${App.fmtMoney(amountDue)}</p>` : ''}
+                    <p>${I18n.t('common.discount')}: ${App.fmtMoney(sale.discount)}</p>
+                    <p class="grand">${I18n.t('common.total')}: ${App.fmtMoney(sale.total)}</p>
+                    <p>${I18n.t('sales.paymentStateLabel')}: ${paymentStateText}</p>
+                    ${sale.paymentState !== 'Paid' ? `<p>${I18n.t('sales.paidLabel')}: ${App.fmtMoney(sale.amountPaid)} — ${I18n.t('sales.dueLabel')}: ${App.fmtMoney(amountDue)}</p>` : ''}
                 </div>
             </body>
             </html>`);
@@ -279,25 +279,25 @@ Object.assign(Pages, {
         try {
             const purchases = await Api.getPurchases(f);
 
-            let html = `<h2 class="page-title">📥 کڕین</h2>
+            let html = `<h2 class="page-title">📥 ${I18n.t('purchases.title')}</h2>
                 <div class="filter-bar">
-                    <div class="form-row"><label>گەڕان بە دابینکەر</label><input type="text" id="puSupplier" value="${App.escapeHtml(f.supplier || '')}"></div>
-                    <button class="btn btn-primary" onclick="Pages.applyPurchaseFilter()">گەڕان</button>
-                    ${canReceive ? `<button class="btn btn-accent" onclick="Pages.showPurchaseForm()">➕ کڕینی نوێ</button>` : ''}
+                    <div class="form-row"><label>${I18n.t('purchases.searchBySupplier')}</label><input type="text" id="puSupplier" value="${App.escapeHtml(f.supplier || '')}"></div>
+                    <button class="btn btn-primary" onclick="Pages.applyPurchaseFilter()">${I18n.t('common.search')}</button>
+                    ${canReceive ? `<button class="btn btn-accent" onclick="Pages.showPurchaseForm()">${I18n.t('purchases.newPurchase')}</button>` : ''}
                 </div>`;
 
             if (purchases.length === 0) {
-                html += App.emptyHtml('هیچ کڕینێک تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('purchases.none'));
             } else {
                 html += `<div class="row-list">`;
                 for (const p of purchases) {
                     html += `<div class="row-item">
                         <div class="row-icon">📥</div>
                         <div class="row-main">
-                            <div class="row-title">${App.escapeHtml(p.supplierName || 'بێ ناوی دابینکەر')}</div>
+                            <div class="row-title">${App.escapeHtml(p.supplierName || I18n.t('purchases.noSupplierName'))}</div>
                             <div class="row-sub">${App.escapeHtml(p.referenceNumber || '—')} · ${App.fmtDate(p.date)} · ${App.escapeHtml(p.createdBy)}</div>
                         </div>
-                        <div class="row-col"><div class="n">${(p.items || []).length}</div><div class="l">کاڵا</div></div>
+                        <div class="row-col"><div class="n">${(p.items || []).length}</div><div class="l">${I18n.t('common.items')}</div></div>
                         <div class="row-total">${App.fmtMoney(p.total)}</div>
                     </div>`;
                 }
@@ -324,24 +324,24 @@ Object.assign(Pages, {
         overlay.id = 'purchaseModal';
         overlay.innerHTML = `
             <div class="modal-box" style="max-width:560px;">
-                <h3>➕ کڕینی نوێ</h3>
+                <h3>${I18n.t('purchases.newPurchase')}</h3>
                 <div id="purchaseFormError" class="alert alert-danger" style="display:none;"></div>
-                <div class="form-row"><label>ناوی دابینکەر</label><input id="pu_supplier"></div>
-                <div class="form-row"><label>ژمارەی وەصڵ</label><input id="pu_reference"></div>
+                <div class="form-row"><label>${I18n.t('purchases.supplierName')}</label><input id="pu_supplier"></div>
+                <div class="form-row"><label>${I18n.t('purchases.referenceNumber')}</label><input id="pu_reference"></div>
                 <div class="form-row">
-                    <label>زیادکردنی کاڵا</label>
+                    <label>${I18n.t('purchases.addItemLabel')}</label>
                     <select id="pu_productSelect">
-                        <option value="">-- کاڵا هەڵبژێرە --</option>
-                        ${products.map(p => `<option value="${p.id}">${App.escapeHtml(p.name)} (کۆگا: ${p.quantity})</option>`).join('')}
+                        <option value="">${I18n.t('purchases.selectProduct')}</option>
+                        ${products.map(p => `<option value="${p.id}">${App.escapeHtml(p.name)} ${I18n.t('purchases.stockSuffix', { qty: p.quantity })}</option>`).join('')}
                     </select>
                 </div>
-                <button class="btn btn-outline btn-small" onclick="Pages.addPurchaseItem()">➕ زیادکردنی ئەم کاڵایە</button>
+                <button class="btn btn-outline btn-small" onclick="Pages.addPurchaseItem()">${I18n.t('purchases.addThisItem')}</button>
                 <div id="purchaseItemsList" style="margin-top:10px;"></div>
-                <div class="form-row" style="margin-top:12px;"><label>داشکاندن</label><input id="pu_discount" type="number" step="0.01" value="0" oninput="Pages.renderPurchaseItems()"></div>
+                <div class="form-row" style="margin-top:12px;"><label>${I18n.t('common.discount')}</label><input id="pu_discount" type="number" step="0.01" value="0" oninput="Pages.renderPurchaseItems()"></div>
                 <p id="pu_total" style="font-size:16px;font-weight:bold;color:var(--primary-dark);"></p>
                 <div style="display:flex;gap:8px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.savePurchase()">✅ پەسەندکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">پاشگەزبوونەوە</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.savePurchase()">✅ ${I18n.t('common.approve')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.cancel')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -378,7 +378,7 @@ Object.assign(Pages, {
         if (!container) return;
 
         if (this._purchaseCart.length === 0) {
-            container.innerHTML = `<p class="text-muted" style="font-size:13px;">هێشتا هیچ کاڵایەک زیاد نەکراوە</p>`;
+            container.innerHTML = `<p class="text-muted" style="font-size:13px;">${I18n.t('purchases.noItemsYet')}</p>`;
         } else {
             container.innerHTML = `<div class="mini-row-list">` +
                 this._purchaseCart.map(i => `
@@ -395,13 +395,13 @@ Object.assign(Pages, {
         const discount = parseFloat(document.getElementById('pu_discount')?.value) || 0;
         const total = Math.max(subtotal - discount, 0);
         const totalEl = document.getElementById('pu_total');
-        if (totalEl) totalEl.textContent = `کۆی گشتی: ${App.fmtMoney(total)} (کۆی پێش داشکاندن: ${App.fmtMoney(subtotal)})`;
+        if (totalEl) totalEl.textContent = I18n.t('purchases.totalsLine', { total: App.fmtMoney(total), subtotal: App.fmtMoney(subtotal) });
     },
 
     async savePurchase() {
         const errBox = document.getElementById('purchaseFormError');
         if (this._purchaseCart.length === 0) {
-            errBox.textContent = 'پێویستە هەر لانیکەم یەک کاڵا زیاد بکەیت.';
+            errBox.textContent = I18n.t('purchases.needAtLeastOneItem');
             errBox.style.display = 'block';
             return;
         }
@@ -431,13 +431,13 @@ Object.assign(Pages, {
         try {
             const expenses = await Api.getExpenses();
 
-            let html = `<h2 class="page-title">💰 خەرجی</h2>
+            let html = `<h2 class="page-title">💰 ${I18n.t('expenses.title')}</h2>
                 <div class="filter-bar">
-                    <button class="btn btn-accent" onclick="Pages.showExpenseForm()">➕ زیادکردنی خەرجی</button>
+                    <button class="btn btn-accent" onclick="Pages.showExpenseForm()">${I18n.t('expenses.add')}</button>
                 </div>`;
 
             if (expenses.length === 0) {
-                html += App.emptyHtml('هیچ خەرجییەک تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('expenses.none'));
             } else {
                 html += `<div class="row-list">`;
                 for (const e of expenses) {
@@ -445,9 +445,9 @@ Object.assign(Pages, {
                         <div class="row-icon">💰</div>
                         <div class="row-main">
                             <div class="row-title">${App.escapeHtml(e.title)}</div>
-                            <div class="row-sub">${App.escapeHtml(e.category || 'بێ پۆل')} · ${App.fmtDate(e.date)}</div>
+                            <div class="row-sub">${App.escapeHtml(e.category || I18n.t('products.noCategory'))} · ${App.fmtDate(e.date)}</div>
                         </div>
-                        ${e.isLinkedToPurchase ? `<span class="badge">📥 پەیوەست بە کڕین</span>` : ''}
+                        ${e.isLinkedToPurchase ? `<span class="badge">${I18n.t('expenses.linkedToPurchase')}</span>` : ''}
                         <div class="row-total">${App.fmtMoney(e.amount)}</div>
                     </div>`;
                 }
@@ -465,15 +465,15 @@ Object.assign(Pages, {
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-box">
-                <h3>➕ زیادکردنی خەرجی</h3>
+                <h3>${I18n.t('expenses.add')}</h3>
                 <div id="expenseFormError" class="alert alert-danger" style="display:none;"></div>
-                <div class="form-row"><label>ناونیشان</label><input id="ex_title"></div>
-                <div class="form-row"><label>پۆل</label><input id="ex_category"></div>
-                <div class="form-row"><label>بڕ</label><input id="ex_amount" type="number" step="0.01"></div>
-                <div class="form-row"><label>تێبینی</label><textarea id="ex_note"></textarea></div>
+                <div class="form-row"><label>${I18n.t('expenses.fieldTitle')}</label><input id="ex_title"></div>
+                <div class="form-row"><label>${I18n.t('common.category')}</label><input id="ex_category"></div>
+                <div class="form-row"><label>${I18n.t('expenses.amount')}</label><input id="ex_amount" type="number" step="0.01"></div>
+                <div class="form-row"><label>${I18n.t('common.notes')}</label><textarea id="ex_note"></textarea></div>
                 <div style="display:flex;gap:8px;margin-top:14px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveExpense()">پاشەکەوتکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">پاشگەزبوونەوە</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveExpense()">${I18n.t('common.save')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.cancel')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -490,7 +490,7 @@ Object.assign(Pages, {
         };
 
         if (!expense.title || expense.amount <= 0) {
-            errBox.textContent = 'ناونیشان و بڕی گونجاو پێویستە.';
+            errBox.textContent = I18n.t('expenses.titleAmountRequired');
             errBox.style.display = 'block';
             return;
         }
@@ -510,14 +510,14 @@ Object.assign(Pages, {
         const today = new Date().toISOString().slice(0, 10);
         const r = range || { from: today, to: today };
 
-        let html = `<h2 class="page-title">📊 ڕاپۆرت</h2>
+        let html = `<h2 class="page-title">📊 ${I18n.t('reports.title')}</h2>
             <div class="filter-bar">
-                <div class="form-row"><label>لە بەرواری</label><input type="date" id="rFrom" value="${r.from}"></div>
-                <div class="form-row"><label>بۆ بەرواری</label><input type="date" id="rTo" value="${r.to}"></div>
-                <button class="btn btn-primary" onclick="Pages.applyReportFilter()">پیشاندان</button>
-                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('today')">ئەمڕۆ</button>
-                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('week')">ئەم هەفتەیە</button>
-                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('month')">ئەم مانگە</button>
+                <div class="form-row"><label>${I18n.t('common.fromDate')}</label><input type="date" id="rFrom" value="${r.from}"></div>
+                <div class="form-row"><label>${I18n.t('common.toDate')}</label><input type="date" id="rTo" value="${r.to}"></div>
+                <button class="btn btn-primary" onclick="Pages.applyReportFilter()">${I18n.t('common.show')}</button>
+                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('today')">${I18n.t('reports.today')}</button>
+                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('week')">${I18n.t('reports.thisWeek')}</button>
+                <button class="btn btn-outline btn-small" onclick="Pages.reportPreset('month')">${I18n.t('reports.thisMonth')}</button>
             </div>
             <div id="reportResults">${App.loadingHtml()}</div>`;
 
@@ -526,21 +526,21 @@ Object.assign(Pages, {
         try {
             const report = await Api.getReport(r.from, r.to);
             let resultsHtml = `<div class="kpi-grid">
-                <div class="kpi-card"><div class="kpi-label">💰 داهات</div><div class="kpi-value">${App.fmtMoney(report.totalRevenue)}</div></div>
-                <div class="kpi-card"><div class="kpi-label">🧾 ژمارەی فرۆشتن</div><div class="kpi-value">${report.salesCount}</div></div>
-                <div class="kpi-card"><div class="kpi-label">📦 تێچووی کاڵا (COGS)</div><div class="kpi-value">${App.fmtMoney(report.costOfGoodsSold)}</div></div>
-                <div class="kpi-card"><div class="kpi-label">💸 خەرجی</div><div class="kpi-value">${App.fmtMoney(report.expensesTotal)}</div></div>
-                <div class="kpi-card"><div class="kpi-label">📈 سوودی پوخت</div><div class="kpi-value">${App.fmtMoney(report.netProfit)}</div></div>
+                <div class="kpi-card"><div class="kpi-label">💰 ${I18n.t('reports.revenue')}</div><div class="kpi-value">${App.fmtMoney(report.totalRevenue)}</div></div>
+                <div class="kpi-card"><div class="kpi-label">🧾 ${I18n.t('dash.salesCount')}</div><div class="kpi-value">${report.salesCount}</div></div>
+                <div class="kpi-card"><div class="kpi-label">📦 ${I18n.t('reports.cogs')}</div><div class="kpi-value">${App.fmtMoney(report.costOfGoodsSold)}</div></div>
+                <div class="kpi-card"><div class="kpi-label">💸 ${I18n.t('reports.expenses')}</div><div class="kpi-value">${App.fmtMoney(report.expensesTotal)}</div></div>
+                <div class="kpi-card"><div class="kpi-label">📈 ${I18n.t('reports.netProfit')}</div><div class="kpi-value">${App.fmtMoney(report.netProfit)}</div></div>
             </div>`;
 
             if (report.topProducts && report.topProducts.length > 0) {
-                resultsHtml += `<div class="card"><h3>🏆 باشترین کاڵا فرۆشراو</h3>
+                resultsHtml += `<div class="card"><h3>🏆 ${I18n.t('reports.topProducts')}</h3>
                     <div class="row-list">` +
                     report.topProducts.map(p => `
                         <div class="row-item">
                             <div class="row-icon">🏆</div>
                             <div class="row-main"><div class="row-title">${App.escapeHtml(p.name)}</div></div>
-                            <div class="row-col"><div class="n">${p.quantitySold}</div><div class="l">بڕ</div></div>
+                            <div class="row-col"><div class="n">${p.quantitySold}</div><div class="l">${I18n.t('common.qty')}</div></div>
                             <div class="row-total">${App.fmtMoney(p.revenue)}</div>
                         </div>
                     `).join('') + `</div></div>`;
@@ -575,8 +575,8 @@ Object.assign(Pages, {
         try {
             const users = await Api.getUsers();
 
-            let html = `<h2 class="page-title">👤 بەکارهێنەران</h2>
-                <div class="filter-bar"><button class="btn btn-accent" onclick="Pages.showUserForm()">➕ زیادکردنی بەکارهێنەر</button></div>
+            let html = `<h2 class="page-title">👤 ${I18n.t('users.title')}</h2>
+                <div class="filter-bar"><button class="btn btn-accent" onclick="Pages.showUserForm()">${I18n.t('users.add')}</button></div>
                 <div class="row-list">`;
 
             for (const u of users) {
@@ -585,8 +585,8 @@ Object.assign(Pages, {
                     <div class="row-main"><div class="row-title">${App.escapeHtml(u.username)}</div></div>
                     <span class="badge">${App.escapeHtml(App.roleLabel ? App.roleLabel(u.role) : u.role)}</span>
                     <div class="row-actions">
-                        <button class="btn btn-outline btn-small" onclick='Pages.showUserForm(${JSON.stringify(u)})'>دەستکاری</button>
-                        ${u.username !== 'admin' ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteUser(${u.id}, '${App.escapeHtml(u.username)}')">سڕینەوە</button>` : ''}
+                        <button class="btn btn-outline btn-small" onclick='Pages.showUserForm(${JSON.stringify(u)})'>${I18n.t('common.edit')}</button>
+                        ${u.username !== 'admin' ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteUser(${u.id}, '${App.escapeHtml(u.username)}')">${I18n.t('common.delete')}</button>` : ''}
                     </div>
                 </div>`;
             }
@@ -604,18 +604,18 @@ Object.assign(Pages, {
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-box">
-                <h3>${u.id ? 'دەستکاریکردنی بەکارهێنەر' : 'زیادکردنی بەکارهێنەر'}</h3>
+                <h3>${u.id ? I18n.t('users.modalEdit') : I18n.t('users.modalAdd')}</h3>
                 <div id="userFormError" class="alert alert-danger" style="display:none;"></div>
-                <div class="form-row"><label>ناوی بەکارهێنەر</label><input id="uf_username" value="${App.escapeHtml(u.username)}"></div>
-                <div class="form-row"><label>ڕۆڵ</label>
+                <div class="form-row"><label>${I18n.t('common.username')}</label><input id="uf_username" value="${App.escapeHtml(u.username)}"></div>
+                <div class="form-row"><label>${I18n.t('common.role')}</label>
                     <select id="uf_role">
-                        ${['Admin', 'Cashier', 'DataEntry', 'Accountant'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}
+                        ${['Admin', 'Cashier', 'DataEntry', 'Accountant'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${I18n.t('role.' + r)}</option>`).join('')}
                     </select>
                 </div>
-                <div class="form-row"><label>وشەی نهێنی ${u.id ? '(بەتاڵی بهێڵەرەوە ئەگەر نایگۆڕیت)' : ''}</label><input id="uf_password" type="password"></div>
+                <div class="form-row"><label>${I18n.t('common.password')} ${u.id ? I18n.t('users.passwordHint') : ''}</label><input id="uf_password" type="password"></div>
                 <div style="display:flex;gap:8px;margin-top:14px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveUser(${u.id})">پاشەکەوتکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">پاشگەزبوونەوە</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveUser(${u.id})">${I18n.t('common.save')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.cancel')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -631,7 +631,7 @@ Object.assign(Pages, {
         };
 
         if (!payload.username || (!id && !payload.password)) {
-            errBox.textContent = 'ناوی بەکارهێنەر و وشەی نهێنی (بۆ بەکارهێنەری نوێ) پێویستە.';
+            errBox.textContent = I18n.t('users.usernamePasswordRequired');
             errBox.style.display = 'block';
             return;
         }
@@ -647,7 +647,7 @@ Object.assign(Pages, {
     },
 
     async deleteUser(id, username) {
-        if (!confirm(`دڵنیایت لە سڕینەوەی بەکارهێنەری "${username}"؟`)) return;
+        if (!confirm(I18n.t('users.confirmDelete', { name: username }))) return;
         try {
             await Api.deleteUser(id);
             this.users();
@@ -668,17 +668,17 @@ Object.assign(Pages, {
             const canEdit = ['Admin', 'DataEntry'].includes(Api.getRole());
             const canDelete = Api.getRole() === 'Admin';
 
-            let html = `<h2 class="page-title">🧑‍🤝‍🧑 کڕیاران</h2>
+            let html = `<h2 class="page-title">🧑‍🤝‍🧑 ${I18n.t('customers.title')}</h2>
                 <div class="filter-bar">
                     <div class="form-row" style="flex:1;min-width:200px;">
-                        <input type="text" id="customerSearch" placeholder="گەڕان بە ناو/ژمارەی مۆبایل..." value="${App.escapeHtml(search || '')}">
+                        <input type="text" id="customerSearch" placeholder="${I18n.t('customers.searchPlaceholder')}" value="${App.escapeHtml(search || '')}">
                     </div>
-                    <button class="btn btn-primary" onclick="Pages.searchCustomers()">گەڕان</button>
-                    ${canEdit ? `<button class="btn btn-accent" onclick="Pages.showCustomerForm()">➕ زیادکردنی کڕیار</button>` : ''}
+                    <button class="btn btn-primary" onclick="Pages.searchCustomers()">${I18n.t('common.search')}</button>
+                    ${canEdit ? `<button class="btn btn-accent" onclick="Pages.showCustomerForm()">➕ ${I18n.t('customers.add')}</button>` : ''}
                 </div>`;
 
             if (customers.length === 0) {
-                html += App.emptyHtml('هیچ کڕیارێک تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('customers.none'));
             } else {
                 html += `<div class="row-list">`;
                 for (const c of customers) {
@@ -686,12 +686,12 @@ Object.assign(Pages, {
                         <div class="row-icon">🧑</div>
                         <div class="row-main">
                             <div class="row-title">${App.escapeHtml(c.name)}</div>
-                            <div class="row-sub">${App.escapeHtml(c.phone || 'بێ ژمارە')} ${c.address ? '· ' + App.escapeHtml(c.address) : ''}</div>
+                            <div class="row-sub">${App.escapeHtml(c.phone || I18n.t('common.noPhone'))} ${c.address ? '· ' + App.escapeHtml(c.address) : ''}</div>
                         </div>
                         <div class="row-actions">
-                            <button class="btn btn-outline btn-small" onclick="Pages.showCustomerHistory(${c.id}, '${App.escapeHtml(c.name)}')">مێژوو</button>
-                            ${canEdit ? `<button class="btn btn-outline btn-small" onclick='Pages.showCustomerForm(${JSON.stringify(c)})'>دەستکاری</button>` : ''}
-                            ${canDelete ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteCustomer(${c.id}, '${App.escapeHtml(c.name)}')">سڕینەوە</button>` : ''}
+                            <button class="btn btn-outline btn-small" onclick="Pages.showCustomerHistory(${c.id}, '${App.escapeHtml(c.name)}')">${I18n.t('common.history')}</button>
+                            ${canEdit ? `<button class="btn btn-outline btn-small" onclick='Pages.showCustomerForm(${JSON.stringify(c)})'>${I18n.t('common.edit')}</button>` : ''}
+                            ${canDelete ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteCustomer(${c.id}, '${App.escapeHtml(c.name)}')">${I18n.t('common.delete')}</button>` : ''}
                         </div>
                     </div>`;
                 }
@@ -717,15 +717,15 @@ Object.assign(Pages, {
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-box">
-                <h3>${c.id ? 'دەستکاریکردنی کڕیار' : 'زیادکردنی کڕیار'}</h3>
+                <h3>${c.id ? I18n.t('customers.modalEdit') : I18n.t('customers.add')}</h3>
                 <div id="customerFormError" class="alert alert-danger" style="display:none;"></div>
-                <div class="form-row"><label>ناو</label><input id="cf_name" value="${App.escapeHtml(c.name)}"></div>
-                <div class="form-row"><label>ژمارەی مۆبایل</label><input id="cf_phone" value="${App.escapeHtml(c.phone)}"></div>
-                <div class="form-row"><label>ناونیشان</label><input id="cf_address" value="${App.escapeHtml(c.address)}"></div>
-                <div class="form-row"><label>تێبینی</label><textarea id="cf_notes">${App.escapeHtml(c.notes)}</textarea></div>
+                <div class="form-row"><label>${I18n.t('common.name')}</label><input id="cf_name" value="${App.escapeHtml(c.name)}"></div>
+                <div class="form-row"><label>${I18n.t('common.phone')}</label><input id="cf_phone" value="${App.escapeHtml(c.phone)}"></div>
+                <div class="form-row"><label>${I18n.t('common.address')}</label><input id="cf_address" value="${App.escapeHtml(c.address)}"></div>
+                <div class="form-row"><label>${I18n.t('common.notes')}</label><textarea id="cf_notes">${App.escapeHtml(c.notes)}</textarea></div>
                 <div style="display:flex;gap:8px;margin-top:14px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveCustomer(${c.id})">پاشەکەوتکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">پاشگەزبوونەوە</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveCustomer(${c.id})">${I18n.t('common.save')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.cancel')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -742,7 +742,7 @@ Object.assign(Pages, {
         };
 
         if (!customer.name) {
-            errBox.textContent = 'ناوی کڕیار پێویستە.';
+            errBox.textContent = I18n.t('customers.nameRequired');
             errBox.style.display = 'block';
             return;
         }
@@ -762,7 +762,7 @@ Object.assign(Pages, {
     },
 
     async deleteCustomer(id, name) {
-        if (!confirm(`دڵنیایت لە سڕینەوەی کڕیاری "${name}"؟`)) return;
+        if (!confirm(I18n.t('customers.confirmDelete', { name }))) return;
         try {
             await Api.deleteCustomer(id);
             this.customers();
@@ -774,33 +774,33 @@ Object.assign(Pages, {
     async showCustomerHistory(id, name) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        overlay.innerHTML = `<div class="modal-box"><h3>مێژووی کڕیار: ${App.escapeHtml(name)}</h3>${App.loadingHtml()}</div>`;
+        overlay.innerHTML = `<div class="modal-box"><h3>${I18n.t('customers.historyTitle', { name: App.escapeHtml(name) })}</h3>${App.loadingHtml()}</div>`;
         document.body.appendChild(overlay);
 
         try {
             const sales = await Api.getCustomerSales(id);
             const total = sales.reduce((s, x) => s + x.total, 0);
             let html = `<div class="modal-box">
-                <h3>مێژووی کڕیار: ${App.escapeHtml(name)}</h3>
+                <h3>${I18n.t('customers.historyTitle', { name: App.escapeHtml(name) })}</h3>
                 <div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-label">وەصڵ</div><div class="kpi-value">${sales.length}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">کۆی گشتی</div><div class="kpi-value">${App.fmtMoney(total)}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.receipt')}</div><div class="kpi-value">${sales.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.total')}</div><div class="kpi-value">${App.fmtMoney(total)}</div></div>
                 </div>`;
             if (sales.length === 0) {
-                html += App.emptyHtml('هیچ فرۆشتنێک بۆ ئەم کڕیارە تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('customers.noSalesHistory'));
             } else {
                 html += `<div class="row-list">` + sales.map(s => `
                     <div class="row-item">
                         <div class="row-icon">🧾</div>
-                        <div class="row-main"><div class="row-title">وەصڵ #${s.id}</div><div class="row-sub">${App.fmtDate(s.date)}</div></div>
+                        <div class="row-main"><div class="row-title">${I18n.t('common.receipt')} #${s.id}</div><div class="row-sub">${App.fmtDate(s.date)}</div></div>
                         <div class="row-total">${App.fmtMoney(s.total)}</div>
                     </div>`).join('') + `</div>`;
             }
-            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
             overlay.innerHTML = html;
         } catch (err) {
             overlay.innerHTML = `<div class="modal-box">${App.errorHtml(err)}
-                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
         }
     },
 
@@ -816,21 +816,21 @@ Object.assign(Pages, {
         try {
             const list = await Api.getCustomersWithBalance(true, search);
 
-            let html = `<h2 class="page-title">📒 قەرزی کڕیاران</h2>
+            let html = `<h2 class="page-title">📒 ${I18n.t('debts.title')}</h2>
                 <div class="filter-bar">
                     <div class="form-row" style="flex:1;min-width:200px;">
-                        <input type="text" id="debtSearch" placeholder="گەڕان بە ناو یان ئایدی کڕیار..." value="${App.escapeHtml(search || '')}">
+                        <input type="text" id="debtSearch" placeholder="${I18n.t('debts.searchPlaceholder')}" value="${App.escapeHtml(search || '')}">
                     </div>
-                    <button class="btn btn-primary" onclick="Pages.searchCustomerDebts()">گەڕان</button>
+                    <button class="btn btn-primary" onclick="Pages.searchCustomerDebts()">${I18n.t('common.search')}</button>
                 </div>`;
 
             if (list.length === 0) {
-                html += App.emptyHtml('هیچ کڕیارێکی قەرزدار نییە 🎉');
+                html += App.emptyHtml(I18n.t('debts.none'));
             } else {
                 const totalDebt = list.reduce((s, c) => s + c.totalDebt, 0);
                 html += `<div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-label">کڕیاری قەرزدار</div><div class="kpi-value">${list.length}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">کۆی گشتی قەرز</div><div class="kpi-value">${App.fmtMoney(totalDebt)}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('debts.debtorCount')}</div><div class="kpi-value">${list.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('debts.totalDebt')}</div><div class="kpi-value">${App.fmtMoney(totalDebt)}</div></div>
                 </div>`;
 
                 html += `<div class="row-list">`;
@@ -839,10 +839,10 @@ Object.assign(Pages, {
                         <div class="row-icon">📒</div>
                         <div class="row-main">
                             <div class="row-title">${App.escapeHtml(c.name)} <span class="text-muted">#${c.customerId}</span></div>
-                            <div class="row-sub">${App.escapeHtml(c.phone || 'بێ ژمارە')} · ${c.unpaidSalesCount} وەصڵی نەدراو</div>
+                            <div class="row-sub">${App.escapeHtml(c.phone || I18n.t('common.noPhone'))} · ${I18n.t('debts.unpaidCount', { count: c.unpaidSalesCount })}</div>
                         </div>
                         <div class="row-total" style="color:var(--danger);">${App.fmtMoney(c.totalDebt)}</div>
-                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick="Pages.showCustomerDebtDetail(${c.customerId}, '${App.escapeHtml(c.name)}')">وردەکاری</button></div>
+                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick="Pages.showCustomerDebtDetail(${c.customerId}, '${App.escapeHtml(c.name)}')">${I18n.t('common.details')}</button></div>
                     </div>`;
                 }
                 html += `</div>`;
@@ -865,7 +865,7 @@ Object.assign(Pages, {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.id = 'debtDetailModal';
-        overlay.innerHTML = `<div class="modal-box"><h3>وەصڵە نەدراوەکانی: ${App.escapeHtml(name)}</h3>${App.loadingHtml()}</div>`;
+        overlay.innerHTML = `<div class="modal-box"><h3>${I18n.t('debts.unpaidSalesOf', { name: App.escapeHtml(name) })}</h3>${App.loadingHtml()}</div>`;
         document.body.appendChild(overlay);
 
         try {
@@ -873,14 +873,14 @@ Object.assign(Pages, {
             const totalDue = sales.reduce((s, x) => s + Math.max((x.total || 0) - (x.amountPaid || 0), 0), 0);
 
             let html = `<div class="modal-box">
-                <h3>وەصڵە نەدراوەکانی: ${App.escapeHtml(name)}</h3>
+                <h3>${I18n.t('debts.unpaidSalesOf', { name: App.escapeHtml(name) })}</h3>
                 <div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-label">وەصڵ</div><div class="kpi-value">${sales.length}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">کۆی ماوە</div><div class="kpi-value">${App.fmtMoney(totalDue)}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.receipt')}</div><div class="kpi-value">${sales.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('debts.totalDue')}</div><div class="kpi-value">${App.fmtMoney(totalDue)}</div></div>
                 </div>`;
 
             if (sales.length === 0) {
-                html += App.emptyHtml('هیچ وەصڵێکی نەدراو نەماوە 🎉');
+                html += App.emptyHtml(I18n.t('debts.noneRemaining'));
             } else {
                 html += `<div class="row-list">` + sales.map(s => `
                     <div class="row-item">
@@ -888,15 +888,15 @@ Object.assign(Pages, {
                         <div class="row-main"><div class="row-title">${App.escapeHtml(s.invoiceNumber || ('#' + s.id))}</div><div class="row-sub">${App.fmtDate(s.date)}</div></div>
                         <div class="row-col">${Pages.paymentStateBadge(s.paymentState)}</div>
                         <div class="row-total" style="color:var(--danger);">${App.fmtMoney(Math.max((s.total || 0) - (s.amountPaid || 0), 0))}</div>
-                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick='Pages.openDebtSaleDetail(${JSON.stringify(s)}, ${id}, ${JSON.stringify(name)})'>پارەدان</button></div>
+                        <div class="row-actions"><button class="btn btn-outline btn-small" onclick='Pages.openDebtSaleDetail(${JSON.stringify(s)}, ${id}, ${JSON.stringify(name)})'>${I18n.t('debts.pay')}</button></div>
                     </div>`).join('') + `</div>`;
             }
 
-            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
             overlay.innerHTML = html;
         } catch (err) {
             overlay.innerHTML = `<div class="modal-box">${App.errorHtml(err)}
-                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
         }
     },
 
@@ -924,17 +924,17 @@ Object.assign(Pages, {
             const canEdit = ['Admin', 'DataEntry'].includes(Api.getRole());
             const canDelete = Api.getRole() === 'Admin';
 
-            let html = `<h2 class="page-title">🚚 دابینکەران</h2>
+            let html = `<h2 class="page-title">🚚 ${I18n.t('suppliers.title')}</h2>
                 <div class="filter-bar">
                     <div class="form-row" style="flex:1;min-width:200px;">
-                        <input type="text" id="supplierSearch" placeholder="گەڕان بە ناو/ژمارەی مۆبایل..." value="${App.escapeHtml(search || '')}">
+                        <input type="text" id="supplierSearch" placeholder="${I18n.t('suppliers.searchPlaceholder')}" value="${App.escapeHtml(search || '')}">
                     </div>
-                    <button class="btn btn-primary" onclick="Pages.searchSuppliers()">گەڕان</button>
-                    ${canEdit ? `<button class="btn btn-accent" onclick="Pages.showSupplierForm()">➕ زیادکردنی دابینکەر</button>` : ''}
+                    <button class="btn btn-primary" onclick="Pages.searchSuppliers()">${I18n.t('common.search')}</button>
+                    ${canEdit ? `<button class="btn btn-accent" onclick="Pages.showSupplierForm()">➕ ${I18n.t('suppliers.add')}</button>` : ''}
                 </div>`;
 
             if (suppliers.length === 0) {
-                html += App.emptyHtml('هیچ دابینکەرێک تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('suppliers.none'));
             } else {
                 html += `<div class="row-list">`;
                 for (const s of suppliers) {
@@ -942,12 +942,12 @@ Object.assign(Pages, {
                         <div class="row-icon">🚚</div>
                         <div class="row-main">
                             <div class="row-title">${App.escapeHtml(s.name)}</div>
-                            <div class="row-sub">${App.escapeHtml(s.phone || 'بێ ژمارە')} ${s.address ? '· ' + App.escapeHtml(s.address) : ''}</div>
+                            <div class="row-sub">${App.escapeHtml(s.phone || I18n.t('common.noPhone'))} ${s.address ? '· ' + App.escapeHtml(s.address) : ''}</div>
                         </div>
                         <div class="row-actions">
-                            <button class="btn btn-outline btn-small" onclick="Pages.showSupplierHistory(${s.id}, '${App.escapeHtml(s.name)}')">مێژوو</button>
-                            ${canEdit ? `<button class="btn btn-outline btn-small" onclick='Pages.showSupplierForm(${JSON.stringify(s)})'>دەستکاری</button>` : ''}
-                            ${canDelete ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteSupplier(${s.id}, '${App.escapeHtml(s.name)}')">سڕینەوە</button>` : ''}
+                            <button class="btn btn-outline btn-small" onclick="Pages.showSupplierHistory(${s.id}, '${App.escapeHtml(s.name)}')">${I18n.t('common.history')}</button>
+                            ${canEdit ? `<button class="btn btn-outline btn-small" onclick='Pages.showSupplierForm(${JSON.stringify(s)})'>${I18n.t('common.edit')}</button>` : ''}
+                            ${canDelete ? `<button class="btn btn-danger btn-small" onclick="Pages.deleteSupplier(${s.id}, '${App.escapeHtml(s.name)}')">${I18n.t('common.delete')}</button>` : ''}
                         </div>
                     </div>`;
                 }
@@ -973,15 +973,15 @@ Object.assign(Pages, {
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
             <div class="modal-box">
-                <h3>${s.id ? 'دەستکاریکردنی دابینکەر' : 'زیادکردنی دابینکەر'}</h3>
+                <h3>${s.id ? I18n.t('suppliers.modalEdit') : I18n.t('suppliers.add')}</h3>
                 <div id="supplierFormError" class="alert alert-danger" style="display:none;"></div>
-                <div class="form-row"><label>ناو</label><input id="sf_name" value="${App.escapeHtml(s.name)}"></div>
-                <div class="form-row"><label>ژمارەی مۆبایل</label><input id="sf_phone" value="${App.escapeHtml(s.phone)}"></div>
-                <div class="form-row"><label>ناونیشان</label><input id="sf_address" value="${App.escapeHtml(s.address)}"></div>
-                <div class="form-row"><label>تێبینی</label><textarea id="sf_notes">${App.escapeHtml(s.notes)}</textarea></div>
+                <div class="form-row"><label>${I18n.t('common.name')}</label><input id="sf_name" value="${App.escapeHtml(s.name)}"></div>
+                <div class="form-row"><label>${I18n.t('common.phone')}</label><input id="sf_phone" value="${App.escapeHtml(s.phone)}"></div>
+                <div class="form-row"><label>${I18n.t('common.address')}</label><input id="sf_address" value="${App.escapeHtml(s.address)}"></div>
+                <div class="form-row"><label>${I18n.t('common.notes')}</label><textarea id="sf_notes">${App.escapeHtml(s.notes)}</textarea></div>
                 <div style="display:flex;gap:8px;margin-top:14px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveSupplier(${s.id})">پاشەکەوتکردن</button>
-                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">پاشگەزبوونەوە</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="Pages.saveSupplier(${s.id})">${I18n.t('common.save')}</button>
+                    <button class="btn btn-outline" style="flex:1;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.cancel')}</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -998,7 +998,7 @@ Object.assign(Pages, {
         };
 
         if (!supplier.name) {
-            errBox.textContent = 'ناوی دابینکەر پێویستە.';
+            errBox.textContent = I18n.t('suppliers.nameRequired');
             errBox.style.display = 'block';
             return;
         }
@@ -1018,7 +1018,7 @@ Object.assign(Pages, {
     },
 
     async deleteSupplier(id, name) {
-        if (!confirm(`دڵنیایت لە سڕینەوەی دابینکەری "${name}"؟`)) return;
+        if (!confirm(I18n.t('suppliers.confirmDelete', { name }))) return;
         try {
             await Api.deleteSupplier(id);
             this.suppliers();
@@ -1030,33 +1030,33 @@ Object.assign(Pages, {
     async showSupplierHistory(id, name) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        overlay.innerHTML = `<div class="modal-box"><h3>مێژووی دابینکەر: ${App.escapeHtml(name)}</h3>${App.loadingHtml()}</div>`;
+        overlay.innerHTML = `<div class="modal-box"><h3>${I18n.t('suppliers.historyTitle', { name: App.escapeHtml(name) })}</h3>${App.loadingHtml()}</div>`;
         document.body.appendChild(overlay);
 
         try {
             const purchases = await Api.getSupplierPurchases(id);
             const total = purchases.reduce((s, x) => s + x.total, 0);
             let html = `<div class="modal-box">
-                <h3>مێژووی دابینکەر: ${App.escapeHtml(name)}</h3>
+                <h3>${I18n.t('suppliers.historyTitle', { name: App.escapeHtml(name) })}</h3>
                 <div class="kpi-grid">
-                    <div class="kpi-card"><div class="kpi-label">کڕین</div><div class="kpi-value">${purchases.length}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">کۆی گشتی</div><div class="kpi-value">${App.fmtMoney(total)}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('purchases.title')}</div><div class="kpi-value">${purchases.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">${I18n.t('common.total')}</div><div class="kpi-value">${App.fmtMoney(total)}</div></div>
                 </div>`;
             if (purchases.length === 0) {
-                html += App.emptyHtml('هیچ کڕینێک لەم دابینکەرەوە تۆمار نەکراوە');
+                html += App.emptyHtml(I18n.t('suppliers.noPurchaseHistory'));
             } else {
                 html += `<div class="row-list">` + purchases.map(p => `
                     <div class="row-item">
                         <div class="row-icon">📥</div>
-                        <div class="row-main"><div class="row-title">${App.escapeHtml(p.referenceNumber || ('کڕین #' + p.id))}</div><div class="row-sub">${App.fmtDate(p.date)}</div></div>
+                        <div class="row-main"><div class="row-title">${App.escapeHtml(p.referenceNumber || (I18n.t('purchases.title') + ' #' + p.id))}</div><div class="row-sub">${App.fmtDate(p.date)}</div></div>
                         <div class="row-total">${App.fmtMoney(p.total)}</div>
                     </div>`).join('') + `</div>`;
             }
-            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+            html += `<button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
             overlay.innerHTML = html;
         } catch (err) {
             overlay.innerHTML = `<div class="modal-box">${App.errorHtml(err)}
-                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">داخستن</button></div>`;
+                <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">${I18n.t('common.close')}</button></div>`;
         }
     },
 
@@ -1066,9 +1066,9 @@ Object.assign(Pages, {
         try {
             const logs = await Api.getActivityLog();
 
-            let html = `<h2 class="page-title">📜 تۆماری چالاکی</h2>`;
+            let html = `<h2 class="page-title">📜 ${I18n.t('activitylog.title')}</h2>`;
             if (logs.length === 0) {
-                html += App.emptyHtml('هیچ تۆمارێک نییە');
+                html += App.emptyHtml(I18n.t('activitylog.none'));
             } else {
                 html += `<div class="row-list">` + logs.map(l => `
                     <div class="row-item">
@@ -1100,20 +1100,20 @@ Object.assign(Pages, {
             const s = await Api.getTenantSettings();
             const canEdit = Api.getRole() === 'Admin';
 
-            let html = `<h2 class="page-title">⚙️ ڕێکخستنەکان</h2>
+            let html = `<h2 class="page-title">⚙️ ${I18n.t('settings.title')}</h2>
                 <div id="settingsError" class="alert alert-danger" style="display:none;"></div>
                 <div id="settingsSuccess" class="alert alert-success" style="display:none;"></div>
                 <div class="card" style="max-width:480px;">
-                    <div class="form-row"><label>ناوی فرۆشگا</label>
+                    <div class="form-row"><label>${I18n.t('settings.storeName')}</label>
                         <input id="st_storeName" value="${App.escapeHtml(s.storeName)}" ${canEdit ? '' : 'disabled'}></div>
-                    <div class="form-row"><label>ناونیشان</label>
+                    <div class="form-row"><label>${I18n.t('common.address')}</label>
                         <input id="st_address" value="${App.escapeHtml(s.address)}" ${canEdit ? '' : 'disabled'}></div>
-                    <div class="form-row"><label>ژمارەی مۆبایل</label>
+                    <div class="form-row"><label>${I18n.t('common.phone')}</label>
                         <input id="st_phone" value="${App.escapeHtml(s.phone)}" ${canEdit ? '' : 'disabled'}></div>
-                    <div class="form-row"><label>پلانی بەشداری</label>
+                    <div class="form-row"><label>${I18n.t('settings.planName')}</label>
                         <input value="${App.escapeHtml(s.planName)}" disabled></div>
-                    ${canEdit ? `<button class="btn btn-primary" style="margin-top:10px;" onclick="Pages.saveTenantSettings()">پاشەکەوتکردن</button>`
-                        : `<p class="row-sub" style="margin-top:10px;">تەنها بەڕێوەبەر (Admin) دەتوانێت ئەم زانیاریانە بگۆڕێت.</p>`}
+                    ${canEdit ? `<button class="btn btn-primary" style="margin-top:10px;" onclick="Pages.saveTenantSettings()">${I18n.t('common.save')}</button>`
+                        : `<p class="row-sub" style="margin-top:10px;">${I18n.t('settings.adminOnly')}</p>`}
                 </div>`;
 
             App.setContent(html);
@@ -1135,7 +1135,7 @@ Object.assign(Pages, {
         };
 
         if (!payload.storeName) {
-            errBox.textContent = 'ناوی فرۆشگا پێویستە.';
+            errBox.textContent = I18n.t('settings.storeNameRequired');
             errBox.style.display = 'block';
             return;
         }
@@ -1144,11 +1144,191 @@ Object.assign(Pages, {
             const updated = await Api.updateTenantSettings(payload);
             localStorage.setItem('storeName', updated.storeName);
             document.getElementById('storeNameLabel').textContent = updated.storeName;
-            okBox.textContent = 'زانیارییەکان بە سەرکەوتووی پاشەکەوتکران.';
+            okBox.textContent = I18n.t('common.savedSuccess');
             okBox.style.display = 'block';
         } catch (err) {
             errBox.textContent = err.message;
             errBox.style.display = 'block';
+        }
+    },
+
+    // ============ پڕۆفایلی من (باتچی پڕۆفایل/فیدباک/نۆتیفیکەیشن) ============
+    // بڕوانە CashierApi/MIGRATION_PROFILE_FEEDBACK_NOTIFICATIONS_REQUIRED.md.
+    // گۆڕینی ناوی فرۆشگا بە ئەنقەست لێرە دووبارە نەکراوەتەوە — ئەوە
+    // پێشتر لە پەڕەی "ڕێکخستنەکان" (Pages.settings) دا هەیە.
+    async profile() {
+        App.setContent(App.loadingHtml());
+        try {
+            const p = await Api.getMyProfile();
+
+            let html = `<h2 class="page-title">👤 ${I18n.t('profile.title')}</h2>
+                <div id="profileError" class="alert alert-danger" style="display:none;"></div>
+                <div id="profileSuccess" class="alert alert-success" style="display:none;"></div>
+
+                <div class="card" style="max-width:480px;">
+                    <div class="form-row" style="align-items:center; display:flex; gap:14px;">
+                        <img id="profilePhotoImg" src="${p.photoUrl ? App.escapeHtml(p.photoUrl) : ''}"
+                             style="width:60px;height:60px;border-radius:50%;object-fit:cover;background:var(--border);${p.photoUrl ? '' : 'display:none;'}">
+                        <span id="profilePhotoPlaceholder" style="font-size:38px;${p.photoUrl ? 'display:none;' : ''}">🙂</span>
+                        <div>
+                            <input type="file" id="profilePhotoFile" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="Pages.uploadMyPhoto()">
+                            <button class="btn btn-outline btn-small" onclick="document.getElementById('profilePhotoFile').click()">${I18n.t('profile.changePhoto')}</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row"><label>${I18n.t('common.username')}</label>
+                        <input value="${App.escapeHtml(p.username)}" disabled></div>
+                    <div class="form-row"><label>${I18n.t('common.role')}</label>
+                        <input value="${App.escapeHtml(App.roleLabel(p.role))}" disabled></div>
+                    <div class="form-row"><label>${I18n.t('profile.fullName')}</label>
+                        <input id="pf_fullName" value="${App.escapeHtml(p.fullName)}" placeholder="${I18n.t('profile.optional')}"></div>
+                    <div class="form-row"><label>${I18n.t('profile.preferredLanguage')}</label>
+                        <select id="pf_lang">
+                            <option value="ku" ${p.preferredLanguage === 'ku' ? 'selected' : ''}>${I18n.t('profile.langKu')}</option>
+                            <option value="ar" ${p.preferredLanguage === 'ar' ? 'selected' : ''}>${I18n.t('profile.langAr')}</option>
+                            <option value="en" ${p.preferredLanguage === 'en' ? 'selected' : ''}>${I18n.t('profile.langEn')}</option>
+                            <option value="fa" ${p.preferredLanguage === 'fa' ? 'selected' : ''}>${I18n.t('profile.langFa')}</option>
+                        </select></div>
+                    <button class="btn btn-primary" style="margin-top:10px;" onclick="Pages.saveMyProfile()">${I18n.t('common.save')}</button>
+                </div>
+
+                <div class="card" style="max-width:480px;">
+                    <h3>${I18n.t('profile.feedbackTitle')}</h3>
+                    <div id="feedbackError" class="alert alert-danger" style="display:none;"></div>
+                    <div id="feedbackSuccess" class="alert alert-success" style="display:none;"></div>
+                    <div class="form-row"><label>${I18n.t('profile.rating')}</label>
+                        <select id="fb_rating">
+                            <option value="5">${I18n.t('profile.rating5')}</option>
+                            <option value="4">${I18n.t('profile.rating4')}</option>
+                            <option value="3">${I18n.t('profile.rating3')}</option>
+                            <option value="2">${I18n.t('profile.rating2')}</option>
+                            <option value="1">${I18n.t('profile.rating1')}</option>
+                        </select></div>
+                    <div class="form-row"><label>${I18n.t('profile.message')}</label>
+                        <textarea id="fb_message" rows="4" placeholder="${I18n.t('profile.messagePlaceholder')}" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit;"></textarea></div>
+                    <button class="btn btn-primary" onclick="Pages.submitFeedback()">${I18n.t('profile.submitFeedback')}</button>
+                </div>`;
+
+            App.setContent(html);
+        } catch (err) {
+            App.setContent(App.errorHtml(err));
+        }
+    },
+
+    async saveMyProfile() {
+        const errBox = document.getElementById('profileError');
+        const okBox = document.getElementById('profileSuccess');
+        errBox.style.display = 'none'; okBox.style.display = 'none';
+
+        const payload = {
+            fullName: document.getElementById('pf_fullName').value.trim(),
+            preferredLanguage: document.getElementById('pf_lang').value
+        };
+        try {
+            await Api.updateMyProfile(payload);
+            okBox.textContent = I18n.t('profile.savedSuccess');
+            okBox.style.display = 'block';
+        } catch (err) {
+            errBox.textContent = err.message;
+            errBox.style.display = 'block';
+        }
+    },
+
+    async uploadMyPhoto() {
+        const fileInput = document.getElementById('profilePhotoFile');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        const errBox = document.getElementById('profileError');
+        const okBox = document.getElementById('profileSuccess');
+        errBox.style.display = 'none'; okBox.style.display = 'none';
+
+        try {
+            const updated = await Api.uploadMyPhoto(file);
+            const img = document.getElementById('profilePhotoImg');
+            const placeholder = document.getElementById('profilePhotoPlaceholder');
+            if (img) { img.src = updated.photoUrl; img.style.display = ''; }
+            if (placeholder) placeholder.style.display = 'none';
+            okBox.textContent = I18n.t('profile.photoUpdated');
+            okBox.style.display = 'block';
+        } catch (err) {
+            // خاڵی: 503 r2_not_configured مانای وایە کۆگای وێنە (Cloudflare
+            // R2) هێشتا لای سێرڤەرەوە ڕێکنەخراوە — بڕوانە
+            // MIGRATION_PRODUCT_IMAGES_REQUIRED.md. نامەکەی سێرڤەر خۆی
+            // ئەمە بە کوردی ڕوون دەکاتەوە، بۆیە لێرە هیچ کارێکی زیادە
+            // پێویست ناکات.
+            errBox.textContent = err.message;
+            errBox.style.display = 'block';
+        } finally {
+            fileInput.value = '';
+        }
+    },
+
+    async submitFeedback() {
+        const errBox = document.getElementById('feedbackError');
+        const okBox = document.getElementById('feedbackSuccess');
+        errBox.style.display = 'none'; okBox.style.display = 'none';
+
+        const rating = parseInt(document.getElementById('fb_rating').value, 10);
+        const message = document.getElementById('fb_message').value.trim();
+        if (!message) {
+            errBox.textContent = I18n.t('profile.messageRequired');
+            errBox.style.display = 'block';
+            return;
+        }
+
+        try {
+            const result = await Api.submitFeedback(rating, message);
+            okBox.textContent = (result && result.message) || I18n.t('profile.feedbackThanks');
+            okBox.style.display = 'block';
+            document.getElementById('fb_message').value = '';
+        } catch (err) {
+            errBox.textContent = err.message;
+            errBox.style.display = 'block';
+        }
+    },
+
+    // ============ ئاگادارکردنەوەکان ============
+    async notifications() {
+        App.setContent(App.loadingHtml());
+        try {
+            const items = await Api.getNotifications();
+
+            if (!items || !items.length) {
+                App.setContent(`<h2 class="page-title">🔔 ${I18n.t('nav.notifications')}</h2>` + App.emptyHtml(I18n.t('notif.none')));
+                return;
+            }
+
+            const typeIcon = { Info: 'ℹ️', Warning: '⚠️', Success: '✅', Update: '🆕' };
+
+            let html = `<h2 class="page-title">🔔 ${I18n.t('nav.notifications')}</h2><div class="row-list">`;
+            for (const n of items) {
+                const icon = typeIcon[n.type] || 'ℹ️';
+                html += `<div class="row-item"${n.isRead ? ' style="opacity:.6;"' : ''}>
+                    <div class="row-icon">${icon}</div>
+                    <div class="row-main">
+                        <div class="row-title">${App.escapeHtml(n.title)}</div>
+                        <div class="row-sub">${App.escapeHtml(n.body)}</div>
+                        <div class="row-sub">${App.fmtDate(n.createdAt)}</div>
+                    </div>
+                    ${!n.isRead ? `<button class="btn btn-outline btn-small" onclick="Pages.markNotificationRead(${n.id})">${I18n.t('notif.markRead')}</button>` : ''}
+                </div>`;
+            }
+            html += `</div>`;
+
+            App.setContent(html);
+        } catch (err) {
+            App.setContent(App.errorHtml(err));
+        }
+    },
+
+    async markNotificationRead(id) {
+        try {
+            await Api.markNotificationRead(id);
+            this.notifications();
+            App.loadNotifBadge();
+        } catch (err) {
+            alert(err.message);
         }
     }
 });

@@ -11,31 +11,37 @@
 <!-- ============ دیمەنی چوونەژوورەوە ============ -->
 <div id="loginScreen" class="login-screen">
     <div class="login-box">
+        <!-- باتچی وەرگێڕان — گۆڕەری زمان، بەرلە چوونەژوورەوەیش دەردەکەوێت -->
+        <select class="lang-switcher" id="langSwitcherLogin">
+            <option value="ckb">کوردی</option>
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+        </select>
         <div class="login-logo">🏪</div>
-        <h1>سیستەمی فرۆشتن</h1>
-        <p class="login-sub">بەڕێوەبەری وێب</p>
+        <h1 data-i18n="app.title">سیستەمی فرۆشتن</h1>
+        <p class="login-sub" data-i18n="app.subtitle">بەڕێوەبەری وێب</p>
 
         <div id="loginError" class="alert alert-danger" style="display:none;"></div>
 
-        <label>ناسنامەی فرۆشگا (Slug)</label>
-        <input type="text" id="loginSlug" placeholder="بۆ نموونە: mystore" autocomplete="off">
+        <label data-i18n="login.slugLabel">ناسنامەی فرۆشگا (Slug)</label>
+        <input type="text" id="loginSlug" data-i18n-placeholder="login.slugPlaceholder" placeholder="بۆ نموونە: mystore" autocomplete="off">
 
-        <label>ناوی بەکارهێنەر</label>
+        <label data-i18n="common.username">ناوی بەکارهێنەر</label>
         <input type="text" id="loginUsername" autocomplete="username">
 
-        <label>وشەی نهێنی</label>
+        <label data-i18n="common.password">وشەی نهێنی</label>
         <input type="password" id="loginPassword" autocomplete="current-password">
 
-        <button id="btnLogin" class="btn btn-primary btn-block">چوونەژوورەوە</button>
+        <button id="btnLogin" class="btn btn-primary btn-block" data-i18n="common.login">چوونەژوورەوە</button>
 
         <div class="login-links">
-            <a href="#" id="linkShowRegister">فرۆشگای نوێت نییە؟ تۆماری بکە</a>
+            <a href="#" id="linkShowRegister" data-i18n="login.registerLink">فرۆشگای نوێت نییە؟ تۆماری بکە</a>
         </div>
 
         <div class="server-config">
-            <label>ناونیشانی سێرڤەر (API)</label>
+            <label data-i18n="common.apiUrlLabel">ناونیشانی سێرڤەر (API)</label>
             <input type="text" id="apiBaseUrl" placeholder="https://cashierapi.onrender.com">
-            <button id="btnSaveApiUrl" class="btn btn-outline btn-small">پاشەکەوتکردن</button>
+            <button id="btnSaveApiUrl" class="btn btn-outline btn-small" data-i18n="common.save">پاشەکەوتکردن</button>
         </div>
     </div>
 </div>
@@ -44,31 +50,31 @@
 <div id="registerScreen" class="login-screen" style="display:none;">
     <div class="login-box">
         <div class="login-logo">🏪</div>
-        <h1>تۆمارکردنی فرۆشگای نوێ</h1>
-        <p class="login-sub">دروستکردنی فرۆشگا و یەکەم بەکارهێنەری Admin</p>
+        <h1 data-i18n="register.title">تۆمارکردنی فرۆشگای نوێ</h1>
+        <p class="login-sub" data-i18n="register.subtitle">دروستکردنی فرۆشگا و یەکەم بەکارهێنەری Admin</p>
 
         <div id="registerError" class="alert alert-danger" style="display:none;"></div>
 
-        <label>ناوی فرۆشگا</label>
-        <input type="text" id="regStoreName" placeholder="بۆ نموونە: فرۆشگای گوڵان" autocomplete="off">
+        <label data-i18n="register.storeName">ناوی فرۆشگا</label>
+        <input type="text" id="regStoreName" data-i18n-placeholder="register.storeNamePlaceholder" placeholder="بۆ نموونە: فرۆشگای گوڵان" autocomplete="off">
 
-        <label>کۆدی یەکتای فرۆشگا (Slug — بە ئینگلیزی، بەبێ بۆشایی)</label>
-        <input type="text" id="regSlug" placeholder="بۆ نموونە: gulan-store" autocomplete="off">
+        <label data-i18n="register.slugLabel">کۆدی یەکتای فرۆشگا (Slug — بە ئینگلیزی، بەبێ بۆشایی)</label>
+        <input type="text" id="regSlug" data-i18n-placeholder="register.slugPlaceholder" placeholder="بۆ نموونە: gulan-store" autocomplete="off">
 
-        <label>ناوی بەکارهێنەری Admin</label>
+        <label data-i18n="register.adminUsername">ناوی بەکارهێنەری Admin</label>
         <input type="text" id="regAdminUsername" value="admin" autocomplete="off">
 
-        <label>وشەی نهێنی Admin</label>
+        <label data-i18n="register.adminPassword">وشەی نهێنی Admin</label>
         <input type="password" id="regAdminPassword" autocomplete="new-password">
 
-        <button id="btnRegister" class="btn btn-primary btn-block">دروستکردنی فرۆشگا</button>
+        <button id="btnRegister" class="btn btn-primary btn-block" data-i18n="register.submit">دروستکردنی فرۆشگا</button>
 
         <div class="login-links">
-            <a href="#" id="linkShowLogin">پێشتر فرۆشگام هەیە؟ بچۆرەژوورەوە</a>
+            <a href="#" id="linkShowLogin" data-i18n="register.loginLink">پێشتر فرۆشگام هەیە؟ بچۆرەژوورەوە</a>
         </div>
 
         <div class="server-config">
-            <label>ناونیشانی سێرڤەر (API)</label>
+            <label data-i18n="common.apiUrlLabel">ناونیشانی سێرڤەر (API)</label>
             <input type="text" id="regApiBaseUrl" placeholder="https://cashierapi.onrender.com">
         </div>
     </div>
@@ -84,23 +90,31 @@
         </div>
 
         <div class="nav-list" id="navList">
-            <a href="#dashboard" class="nav-item" data-page="dashboard">🏠 داشبۆرد</a>
-            <a href="#products" class="nav-item" data-page="products">📦 کاڵاکان</a>
-            <a href="#sales" class="nav-item" data-page="sales">🕓 مێژووی فرۆشتن</a>
-            <a href="#customers" class="nav-item" data-page="customers">🧑‍🤝‍🧑 کڕیاران</a>
-            <a href="#customerdebts" class="nav-item" data-page="customerdebts">📒 قەرزی کڕیاران</a>
-            <a href="#purchases" class="nav-item" data-page="purchases">📥 کڕین</a>
-            <a href="#suppliers" class="nav-item" data-page="suppliers">🚚 دابینکەران</a>
-            <a href="#expenses" class="nav-item" data-page="expenses">💰 خەرجی</a>
-            <a href="#reports" class="nav-item" data-page="reports">📊 ڕاپۆرت</a>
-            <a href="#users" class="nav-item" data-page="users">👤 بەکارهێنەران</a>
-            <a href="#activitylog" class="nav-item" data-page="activitylog">📜 تۆماری چالاکی</a>
-            <a href="#settings" class="nav-item" data-page="settings">⚙️ ڕێکخستنەکان</a>
+            <a href="#dashboard" class="nav-item" data-page="dashboard"><span class="nav-ico">🏠</span> <span data-i18n="nav.dashboard">داشبۆرد</span></a>
+            <a href="#products" class="nav-item" data-page="products"><span class="nav-ico">📦</span> <span data-i18n="nav.products">کاڵاکان</span></a>
+            <a href="#sales" class="nav-item" data-page="sales"><span class="nav-ico">🕓</span> <span data-i18n="nav.sales">مێژووی فرۆشتن</span></a>
+            <a href="#customers" class="nav-item" data-page="customers"><span class="nav-ico">🧑‍🤝‍🧑</span> <span data-i18n="nav.customers">کڕیاران</span></a>
+            <a href="#customerdebts" class="nav-item" data-page="customerdebts"><span class="nav-ico">📒</span> <span data-i18n="nav.customerdebts">قەرزی کڕیاران</span></a>
+            <a href="#purchases" class="nav-item" data-page="purchases"><span class="nav-ico">📥</span> <span data-i18n="nav.purchases">کڕین</span></a>
+            <a href="#suppliers" class="nav-item" data-page="suppliers"><span class="nav-ico">🚚</span> <span data-i18n="nav.suppliers">دابینکەران</span></a>
+            <a href="#expenses" class="nav-item" data-page="expenses"><span class="nav-ico">💰</span> <span data-i18n="nav.expenses">خەرجی</span></a>
+            <a href="#reports" class="nav-item" data-page="reports"><span class="nav-ico">📊</span> <span data-i18n="nav.reports">ڕاپۆرت</span></a>
+            <a href="#users" class="nav-item" data-page="users"><span class="nav-ico">👤</span> <span data-i18n="nav.users">بەکارهێنەران</span></a>
+            <a href="#activitylog" class="nav-item" data-page="activitylog"><span class="nav-ico">📜</span> <span data-i18n="nav.activitylog">تۆماری چالاکی</span></a>
+            <a href="#settings" class="nav-item" data-page="settings"><span class="nav-ico">⚙️</span> <span data-i18n="nav.settings">ڕێکخستنەکان</span></a>
+            <a href="#notifications" class="nav-item" data-page="notifications" id="navNotifications"><span class="nav-ico">🔔</span> <span data-i18n="nav.notifications">ئاگادارکردنەوەکان</span></a>
+            <a href="#profile" class="nav-item" data-page="profile"><span class="nav-ico">👤</span> <span data-i18n="nav.profile">پڕۆفایلی من</span></a>
         </div>
 
         <div class="sidebar-footer">
+            <!-- باتچی وەرگێڕان — گۆڕەری زمان، دوای چوونەژوورەوەش لێرە بەردەستە -->
+            <select class="lang-switcher" id="langSwitcherApp" style="width:100%; margin-bottom:8px;">
+                <option value="ckb">کوردی</option>
+                <option value="ar">العربية</option>
+                <option value="en">English</option>
+            </select>
             <div id="currentUserLabel" class="current-user"></div>
-            <button id="btnLogout" class="btn btn-outline btn-small btn-block">چوونەدەرەوە</button>
+            <button id="btnLogout" class="btn btn-outline btn-small btn-block" data-i18n="common.logout">چوونەدەرەوە</button>
         </div>
     </nav>
 
@@ -116,6 +130,7 @@
     </main>
 </div>
 
+<script src="js/i18n.js"></script>
 <script src="js/api.js"></script>
 <script src="js/pages-1.js"></script>
 <script src="js/pages-2.js"></script>

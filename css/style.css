@@ -163,6 +163,15 @@ input, select, textarea { font-family: inherit; }
 .login-box input::placeholder { color: rgba(255,255,255,0.3); }
 .login-box input:focus, .login-box select:focus { border-color: var(--primary-light); background: rgba(255,255,255,0.09); }
 
+/* باتچی وەرگێڕان — گۆڕەری زمان لە login-box ـدا ناوی width:100% ـی
+   input/select ـی گشتی وەرناگرێت، بۆیە بچووک و لای دەستپێکی خوێندنەوە
+   دادەنرێت (لای ڕاست لە RTL، خۆکارانە دەگۆڕدرێت بۆ لای چەپ لە EN). */
+.login-box .lang-switcher {
+  width: auto; display: block; margin: 0 0 10px auto;
+  padding: 6px 10px; font-size: 11.5px;
+  background: rgba(255,255,255,0.08); border-radius: 8px;
+}
+
 .server-config { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); text-align: right; }
 .server-config label { font-size: 11px; }
 

@@ -2,11 +2,30 @@
 
 const App = {
     async init() {
+        // باتچی وەرگێڕان — یەکەم شت، پێش هەموو شتێکی تر، تاوەکو دەقی
+        // چوونەژوورەوە/تۆمارکردن لە دەستپێکەوە بە زمانی هەڵبژێردراوی
+        // پێشوو دەربکەوێت (ئەگەر پێشتر هەڵبژێردرابوو).
+        I18n.init();
+        I18n.applyStaticTranslations();
+        document.querySelectorAll('.lang-switcher').forEach(sel => {
+            sel.addEventListener('change', () => {
+                I18n.setLanguage(sel.value);
+                // ئەگەر ئاپەکە کراوەیە (چوونەژوورەوە کراوە)، خشتەی
+                // ناڤیگەیشن و badge ی ئاگادارکردنەوەکان و ناوی
+                // ڕۆڵی بەکارهێنەر پێویستە بە زمانی نوێ نوێبکرێنەوە.
+                if (Api.isLoggedIn()) {
+                    document.getElementById('currentUserLabel').textContent =
+                        Api.getUsername() + ' (' + this.roleLabel(Api.getRole()) + ')';
+                    this.loadNotifBadge();
+                }
+            });
+        });
+
         document.getElementById('apiBaseUrl').value = Api.getBaseUrl();
 
         document.getElementById('btnSaveApiUrl').onclick = () => {
             Api.setBaseUrl(document.getElementById('apiBaseUrl').value.trim());
-            alert('پاشەکەوت کرا.');
+            alert(I18n.t('common.save') + ' ✓');
         };
 
         document.getElementById('btnLogin').onclick = () => this.doLogin();
@@ -60,6 +79,29 @@ const App = {
         this.applyRoleVisibility();
         this.route();
         this.loadSubscriptionBanner();
+        this.loadNotifBadge();
+    },
+
+    // باتچی پڕۆفایل/فیدباک/نۆتیفیکەیشن — ژمارەی نەخوێندراوەکان لای
+    // ناوی "🔔 ئاگادارکردنەوەکان" لە sidebar دەردەخات. شکستهێنانی ئەم
+    // پشکنینە (بۆ نموونە endpoint ـەکە هێشتا نوێ deploy نەکرابێت) نابێت
+    // ببێتە هۆی وەستانی ئاپەکە — هەمان شێوازی loadSubscriptionBanner.
+    async loadNotifBadge() {
+        const el = document.getElementById('navNotifications');
+        if (!el) return;
+        // باتچی وەرگێڕان — پێشتر ڕاستەوخۆ el.textContent دادنرا، کە
+        // بەربوونی <span data-i18n="nav.notifications"> ـی نوێی
+        // نێوان ئایکۆن/دەق دەشکاند. ئێستا تەنها ناوەڕۆکی ئەو span ـە
+        // دەگۆڕدرێت، بۆیە ئایکۆنەکە دەمێنێتەوە و بە هەر زمانێک کە
+        // ئێستا چالاکە دەردەکەوێت.
+        const labelSpan = el.querySelector('[data-i18n="nav.notifications"]');
+        try {
+            const count = await Api.getUnreadNotificationCount();
+            const label = I18n.t('nav.notifications');
+            if (labelSpan) labelSpan.textContent = count > 0 ? `${label} (${count})` : label;
+        } catch {
+            // بێدەنگانە ڕەتی دەکاتەوە
+        }
     },
 
     // باتچ ٣ (دوای MFA) — Part 37 follow-up: GET /api/Subscription/status
@@ -82,15 +124,15 @@ const App = {
 
             if (status.status === 'Trial' && days != null) {
                 cls = days <= 3 ? 'alert-danger' : 'alert-info';
-                text = `ماوەی تاقیکردنەوەت ${days} ڕۆژی ماوە. بۆ بەردەوامبوون دوای تەواوبوونی ماوەکە، پەیوەندی بە پشتگیری بکە.`;
+                text = I18n.t('subscription.trialDays', { days });
             } else if (status.status === 'GracePeriod') {
                 cls = 'alert-danger';
                 text = days != null
-                    ? `کاتی پارەدانت تێپەڕیوە — ${days} ڕۆژی ماوە بۆ ماوەی مۆڵەت پێش وەستانی هەژمارەکەت. تکایە زوو پارە بدە.`
-                    : 'کاتی پارەدانت تێپەڕیوە — تکایە زوو پارە بدە بۆ بەردەوامبوون.';
+                    ? I18n.t('subscription.graceWithDays', { days })
+                    : I18n.t('subscription.graceNoDays');
             } else if (status.status === 'PaymentDue') {
                 cls = 'alert-warning';
-                text = 'کاتی پارەدانی نۆرمی ئێستات هاتووە. تکایە پارە بدە تاوەکو هەژمارەکەت بەردەوام چالاک بمێنێتەوە.';
+                text = I18n.t('subscription.paymentDue');
             }
 
             if (cls && text) {
@@ -105,8 +147,7 @@ const App = {
     },
 
     roleLabel(role) {
-        const map = { Admin: 'بەڕێوەبەر', Cashier: 'کاشێر', DataEntry: 'تۆمارکەری زانیاری', Accountant: 'ژمێریار' };
-        return map[role] || role;
+        return I18n.t('role.' + role) !== ('role.' + role) ? I18n.t('role.' + role) : (role || '');
     },
 
     // خاڵی: ئەمە تەنها ڕوکارە (UI convenience) — پاراستنی ڕاستەقینە
@@ -136,7 +177,12 @@ const App = {
             // ی سادەی TenantController.GetSettings)، بەڵام تەنها Admin
             // دەتوانێت بگۆڕێت (Pages.settings خۆی فۆرمەکە disable دەکات
             // بۆ ڕۆڵی تر).
-            settings: ['Admin', 'Cashier', 'DataEntry', 'Accountant']
+            settings: ['Admin', 'Cashier', 'DataEntry', 'Accountant'],
+            // باتچی پڕۆفایل/فیدباک/نۆتیفیکەیشن — هەموو ڕۆڵێک، هەمان
+            // شێوازی settings (endpoint ـەکانی [Authorize] ـی سادەن،
+            // بەبێ سنووری ڕۆڵ لای سێرڤەرەوە).
+            notifications: ['Admin', 'Cashier', 'DataEntry', 'Accountant'],
+            profile: ['Admin', 'Cashier', 'DataEntry', 'Accountant']
         };
         document.querySelectorAll('.nav-item').forEach(el => {
             const page = el.dataset.page;
@@ -152,7 +198,7 @@ const App = {
         errBox.style.display = 'none';
 
         if (!slug || !username || !password) {
-            errBox.textContent = 'تکایە هەموو خانەکان پڕبکەرەوە.';
+            errBox.textContent = I18n.t('common.fillAllFields');
             errBox.style.display = 'block';
             return;
         }
@@ -162,7 +208,7 @@ const App = {
             Api.setSession(result.token, result.username, result.role, result.storeName);
             this.showApp();
         } catch (err) {
-            errBox.textContent = err.message || 'چوونەژوورەوە شکستی هێنا.';
+            errBox.textContent = err.message || I18n.t('login.failed');
             errBox.style.display = 'block';
         }
     },
@@ -177,7 +223,7 @@ const App = {
         errBox.style.display = 'none';
 
         if (!storeName || !slug || !adminUsername || !adminPassword) {
-            errBox.textContent = 'تکایە هەموو خانەکان پڕبکەرەوە.';
+            errBox.textContent = I18n.t('common.fillAllFields');
             errBox.style.display = 'block';
             return;
         }
@@ -186,19 +232,19 @@ const App = {
 
         const btn = document.getElementById('btnRegister');
         btn.disabled = true;
-        btn.textContent = 'تکایە چاوەڕێبە...';
+        btn.textContent = I18n.t('common.pleaseWait');
 
         try {
             const result = await Api.registerTenant(storeName, slug, adminUsername, adminPassword);
             Api.setSession(result.token, result.username, result.role, result.storeName);
-            alert('فرۆشگا بە سەرکەوتووی تۆمارکرا! ناوی بەکارهێنەر: ' + result.username);
+            alert(I18n.t('register.successMessage', { username: result.username }));
             this.showApp();
         } catch (err) {
-            errBox.textContent = err.message || 'تۆمارکردن شکستی هێنا.';
+            errBox.textContent = err.message || I18n.t('register.failed');
             errBox.style.display = 'block';
         } finally {
             btn.disabled = false;
-            btn.textContent = 'دروستکردنی فرۆشگا';
+            btn.textContent = I18n.t('register.submit');
         }
     },
 
@@ -227,7 +273,9 @@ const App = {
             reports: Pages.reports,
             users: Pages.users,
             activitylog: Pages.activitylog,
-            settings: Pages.settings
+            settings: Pages.settings,
+            notifications: Pages.notifications,
+            profile: Pages.profile
         };
 
         const renderer = renderers[hash] || Pages.dashboard;
@@ -262,16 +310,16 @@ const App = {
     },
 
     loadingHtml(label) {
-        return `<div class="state-box">⏳ ${label || 'بارکردن...'}</div>`;
+        return `<div class="state-box">⏳ ${label || I18n.t('common.loading')}</div>`;
     },
 
     errorHtml(err) {
-        const msg = (err && err.message) ? err.message : 'هەڵەیەک ڕوویدا.';
+        const msg = (err && err.message) ? err.message : I18n.t('common.genericError');
         return `<div class="state-box">⚠️ ${App.escapeHtml(msg)}</div>`;
     },
 
     emptyHtml(label) {
-        return `<div class="state-box">🗒️ ${label || 'هیچ داتایەک نییە'}</div>`;
+        return `<div class="state-box">🗒️ ${label || I18n.t('common.noData')}</div>`;
     }
 };
 

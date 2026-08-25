@@ -50,21 +50,21 @@ const Api = {
                 body: body !== undefined ? JSON.stringify(body) : undefined
             });
         } catch (err) {
-            throw new ApiError(0, 'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. تکایە ئینتەرنێت/ناونیشانی سێرڤەر بپشکنە.');
+            throw new ApiError(0, I18n.t('apiError.network'));
         }
 
         if (resp.status === 401) {
             // token ـەکە بەسەرچووە یان نادروستە
             this.clearSession();
-            throw new ApiError(401, 'کاتی چوونەژوورەوەت بەسەرچووە، تکایە دووبارە بچۆرەژوورەوە.');
+            throw new ApiError(401, I18n.t('apiError.sessionExpired'));
         }
 
         if (resp.status === 403) {
-            throw new ApiError(403, 'دەسەڵاتت نییە بۆ ئەم کردارە.');
+            throw new ApiError(403, I18n.t('apiError.noPermission'));
         }
 
         if (!resp.ok) {
-            let message = 'هەڵەیەک ڕوویدا (' + resp.status + ')';
+            let message = I18n.t('apiError.genericStatus', { status: resp.status });
             try {
                 const data = await resp.json();
                 message = data.message || data.error || (typeof data === 'string' ? data : message);
@@ -127,17 +127,17 @@ const Api = {
         try {
             resp = await fetch(this.getBaseUrl() + path, { method: 'POST', headers, body: form });
         } catch (err) {
-            throw new ApiError(0, 'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. تکایە ئینتەرنێت/ناونیشانی سێرڤەر بپشکنە.');
+            throw new ApiError(0, I18n.t('apiError.network'));
         }
 
         if (resp.status === 401) {
             this.clearSession();
-            throw new ApiError(401, 'کاتی چوونەژوورەوەت بەسەرچووە، تکایە دووبارە بچۆرەژوورەوە.');
+            throw new ApiError(401, I18n.t('apiError.sessionExpired'));
         }
-        if (resp.status === 403) throw new ApiError(403, 'دەسەڵاتت نییە بۆ ئەم کردارە.');
+        if (resp.status === 403) throw new ApiError(403, I18n.t('apiError.noPermission'));
 
         if (!resp.ok) {
-            let message = 'هەڵەیەک ڕوویدا (' + resp.status + ')';
+            let message = I18n.t('apiError.genericStatus', { status: resp.status });
             try {
                 const data = await resp.json();
                 message = data.message || data.error || message;
@@ -238,7 +238,23 @@ const Api = {
     // پێشووتردا لە backend ـدا دروستکرابوون بەڵام هیچ لایەنی WebAdmin
     // ـیان نەبوو — بڕوانە pages-2.js ـی Pages.settings.
     getTenantSettings() { return this.get('/api/Tenant/settings'); },
-    updateTenantSettings(payload) { return this.put('/api/Tenant/settings', payload); }
+    updateTenantSettings(payload) { return this.put('/api/Tenant/settings', payload); },
+
+    // -------------------- پڕۆفایل/فیدباک/نۆتیفیکەیشن --------------------
+    // بڕوانە CashierApi/Controllers/ProfileController.cs,
+    // FeedbackController.cs, NotificationsController.cs — بڕوانە
+    // CashierApi/MIGRATION_PROFILE_FEEDBACK_NOTIFICATIONS_REQUIRED.md بۆ
+    // وردەکاری backend ـەکە (پێشتر تەواو بووە و run کراوە لەسەر Aiven،
+    // ئەم فایلە تەنها UI ـی WebAdmin ـە کە پێشتر بوونی نەبوو).
+    getMyProfile() { return this.get('/api/Profile'); },
+    updateMyProfile(payload) { return this.put('/api/Profile', payload); },
+    uploadMyPhoto(file) { return this.uploadFile('/api/Profile/photo', file); },
+
+    submitFeedback(rating, message) { return this.post('/api/Feedback', { rating, message }); },
+
+    getNotifications() { return this.get('/api/Notifications'); },
+    getUnreadNotificationCount() { return this.get('/api/Notifications/unread-count'); },
+    markNotificationRead(id) { return this.post('/api/Notifications/' + id + '/read'); }
 };
 
 class ApiError extends Error {
